@@ -1,0 +1,26 @@
+# 依存パッケージ(再インストールできるので上げない)
+node_modules/
+
+# 一時ファイル
+.tmp
+
+# ビルド成果物(ソースから作れるので上げない)
+dist/
+build/
+.next/
+out/
+
+# 環境変数・秘密情報(絶対に上げない)
+.env
+.env.local
+.env.*.local
+
+# OS / エディタが作るゴミ
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ログ・キャッシュ
+*.log
+.cache/

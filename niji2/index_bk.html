@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2次関数アプリ</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8ec5fc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            background-color: #f7f9fa;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-top: 0;
+            text-align: center;
+        }
+        h3 {
+            font-size: 1.1rem;
+            color: #666;
+            margin: 20px 0 10px 0;
+            text-align: center;
+        }
+        .canvas-wrapper {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #f0f4f8;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .options-container {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        /* 角丸のかわいいぷっくりボタン */
+        .option-btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 0 #e2e8f0;
+            transition: all 0.1s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            color: #333333;
+        }
+        .option-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #e2e8f0;
+        }
+        
+        /* 【修正】MathJaxの数式がスマホ環境で水色（システムカラー）になるのを強制防止 */
+        mjx-container {
+            color: #333333;
+        }
+
+        .result {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            min-height: 1.5em;
+        }
+        .correct-text { color: #4caf50; }
+        .incorrect-text { color: #f44336; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h2>2次関数のグラフだよ</h2>
+    
+    <div class="canvas-wrapper">
+        <canvas id="graphCanvas"></canvas>
+    </div>
+
+    <h3>式はどうなる？</h3>
+
+    <div class="options-container" id="optionsContainer"></div>
+    <div class="result" id="resultMessage"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const resultMessage = document.getElementById('resultMessage');
+
+    let currentQuestion = { a: 0, b: 0, c: 0, aState: '', bState: '', cState: '' };
+    let currentPhase = 0; 
+
+    const phases = [
+        {
+            getOptions: (q) => [
+                { id: 1, text: '\\( y = \\textcolor{red}{\\textbf{正}}x^2 + \\text{数}x + \\text{数} \\)' },
+                { id: 2, text: '\\( y = \\textcolor{blue}{\\textbf{負}}x^2 + \\text{数}x + \\text{数} \\)' }
+            ],
+            getCorrectId: (q) => (q.aState === '正' ? 1 : 2)
+        },
+        {
+            getOptions: (q) => {
+                const aPart = q.aState === '正' ? '\\textbf{正}' : '\\textbf{負}';
+                return [
+                    { id: 3, text: `\\( y = ${aPart}x^2 \\textcolor{red}{+ \\textbf{正}x} + \\text{数} \\)` },
+                    { id: 4, text: `\\( y = ${aPart}x^2 \\textcolor{red}{\\phantom{+ \\textbf{正}x}} + \\text{数} \\)` },
+                    { id: 5, text: `\\( y = ${aPart}x^2 \\textcolor{blue}{+ \\textbf{負}x} + \\text{数} \\)` }
+                ];
+            },
+            getCorrectId: (q) => (q.bState === '正' ? 3 : (q.bState === 'ゼロ' ? 4 : 5))
+        },
+        {
+            getOptions: (q) => {
+                const aPart = q.aState === '正' ? '\\textbf{正}' : '\\textbf{負}';
+                let bPart = '';
+                if (q.bState === '正') bPart = '+ \\textbf{正}x';
+                if (q.bState === '負') bPart = '+ \\textbf{負}x';
+                if (q.bState === 'ゼロ') bPart = '\\phantom{+ \\textbf{正}x}';
+
+                return [
+                    { id: 6, text: `\\( y = ${aPart}x^2 ${bPart} \\textcolor{red}{+ \\textbf{正}} \\)` },
+                    { id: 7, text: `\\( y = ${aPart}x^2 ${bPart} \\textcolor{red}{\\phantom{+ \\textbf{正}}} \\)` },
+                    { id: 8, text: `\\( y = ${aPart}x^2 ${bPart} \\textcolor{blue}{+ \\textbf{負}} \\)` }
+                ];
+            },
+            getCorrectId: (q) => (q.cState === '正' ? 6 : (q.cState === 'ゼロ' ? 7 : 8))
+        }
+    ];
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+
+    function startNewQuestion() {
+        const aState = Math.random() > 0.5 ? '正' : '負';
+        const bState = ['正', 'ゼロ', '負'][Math.floor(Math.random() * 3)];
+        const cState = ['正', 'ゼロ', '負'][Math.floor(Math.random() * 3)];
+
+        currentQuestion = {
+            aState, bState, cState,
+            a: aState === '正' ? 0.0075 : -0.0075,
+            b: bState === '正' ? 0.6 : (bState === '負' ? -0.6 : 0),
+            c: cState === '正' ? 40 : (cState === '負' ? -40 : 0)
+        };
+
+        currentPhase = 0;
+        drawGraph();
+        renderPhase();
+    }
+
+    function renderPhase() {
+        resultMessage.textContent = "";
+        const phaseData = phases[currentPhase];
+
+        optionsContainer.innerHTML = '';
+        phaseData.getOptions(currentQuestion).forEach((opt) => {
+            const button = document.createElement('button');
+            button.className = 'option-btn';
+            button.innerHTML = opt.text;
+            button.onclick = () => checkAnswer(opt.id);
+            optionsContainer.appendChild(button);
+        });
+
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([optionsContainer]).catch((err) => console.log(err));
+        }
+    }
+
+    function checkAnswer(selectedId) {
+        const phaseData = phases[currentPhase];
+        const correctId = phaseData.getCorrectId(currentQuestion);
+
+        if (selectedId === correctId) {
+            resultMessage.innerHTML = `<span class="correct-text">○ 正解！ ➔ 次へ</span>`;
+            currentPhase++;
+            
+            setTimeout(() => {
+                if (currentPhase > 2) {
+                    startNewQuestion();
+                } else {
+                    renderPhase();
+                }
+            }, 1000);
+        } else {
+            resultMessage.innerHTML = `<span class="incorrect-text">× 不正解！もう一度グラフの位置を確かめよう</span>`;
+        }
+    }
+
+    window.addEventListener('resize', () => { resizeCanvas(); drawGraph(); });
+    window.addEventListener('load', () => {
+        resizeCanvas();
+        startNewQuestion();
+    });
+
+    function drawGraph() {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const originX = w / 2;
+        const originY = h / 2;
+
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, originY); ctx.lineTo(w, originY);
+        ctx.moveTo(originX, 0); ctx.lineTo(originX, h);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'italic 16px "Times New Roman", serif';
+        ctx.fillText('O', originX - 16, originY + 18);
+        ctx.fillText('x', w - 15, originY + 18);
+        ctx.fillText('y', originX + 8, 18);
+
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+
+        for (let screenX = 0; screenX < w; screenX++) {
+            const x = screenX - originX;
+            const y = currentQuestion.a * x * x + currentQuestion.b * x + currentQuestion.c;
+            const screenY = originY - y;
+
+            if (screenX === 0) ctx.moveTo(screenX, screenY);
+            else ctx.lineTo(screenX, screenY);
+        }
+        ctx.stroke();
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW registered!'))
+                .catch(err => console.error('SW registration failed:', err));
+        });
+    }
+</script>
+
+</body>
+</html>

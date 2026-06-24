@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>指数分布マスター</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon192.png">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#007bff">
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* 横スクロールのみを完全に抑止し、縦方向はブラウザ本来の自然な挙動に戻す */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            padding: 15px;
+        }
+
+        /* 自然なカード型コンテナのバランス */
+        #app-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 16px;
+        }
+
+        /* ヘッダーエリア（タイトル、バー、問題数を横並びに） */
+        .header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            gap: 12px;
+        }
+        h2 {
+            font-size: 1.1rem;
+            color: #555;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        /* 進捗バーの土台 */
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 6px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        /* 進捗バー本体（問題数表記と同じ青） */
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #007bff;
+            transition: width 0.2s ease;
+        }
+        .progress-text {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #007bff;
+            flex-shrink: 0;
+        }
+
+        /* 問題文エリア */
+        .question-text {
+            font-size: 1.1rem;
+            min-height: 120px;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        /* 問題文の2行目（数式など）を1.2倍にするスタイル */
+        .formula-line {
+            font-size: 1.2em;
+            display: inline-block;
+        }
+        
+        /* 参考テキストも1.2倍に調整 */
+        .reference-text {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            font-size: 1.2em;
+            color: #444;
+        }
+
+        /* フィードバックエリア */
+        .feedback {
+            height: 30px;
+            line-height: 30px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        /* オプション・ボタン群のエリア */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 立体感のある3D押し込み風ボタン */
+        .btn {
+            padding: 12px;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            background: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-bottom: 4px solid #b2b6ba; /* 下の厚み */
+            border-radius: 12px; /* 丸み */
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active {
+            border-bottom-width: 1px;
+            margin-top: 3px; /* 押し込まれた分だけ下に下げる */
+            margin-bottom: -3px;
+            background: #e2e6ea;
+        }
+        .btn.correct { background: #d4edda !important; border-color: #c3e6cb !important; border-bottom-color: #a1c9ae !important; }
+        .btn.wrong { background: #f8d7da !important; border-color: #f5c6cb !important; border-bottom-color: #dfb0b4 !important; }
+        
+        /* スキップボタン */
+        .btn-skip {
+            background: #fff5f5;
+            border-color: #feb2b2;
+            border-bottom: 4px solid #fc8181;
+            color: #c53030;
+            text-align: center;
+            font-weight: bold;
+        }
+        .btn-skip:active {
+            border-bottom-width: 1px;
+            margin-top: 3px;
+            margin-bottom: -3px;
+            background: #fed7d7;
+        }
+        
+        /* 結果画面のボタンエリア */
+        .result-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .btn-retry { background: #28a745; border-bottom: 4px solid #1e7e34; }
+        .btn-retry:active { border-bottom-width: 1px; transform: translateY(3px); background: #218838; }
+        
+        .btn-wrong-retry { background: #dc3545; border-bottom: 4px solid #bd2130; }
+        .btn-wrong-retry:active { border-bottom-width: 1px; transform: translateY(3px); background: #c82333; }
+
+        .btn-cross { background: #007bff; border-bottom: 4px solid #0062cc; }
+        .btn-cross:active { border-bottom-width: 1px; transform: translateY(3px); background: #0069d9; }
+        
+        .btn-random { background: #17a2b8; border-bottom: 4px solid #117a8b; }
+        .btn-random:active { border-bottom-width: 1px; transform: translateY(3px); background: #138496; }
+
+        /* 結果テーブル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            text-align: center;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 8px 4px;
+            font-size: 0.85rem;
+        }
+        th { background: #e9ecef; }
+        .mark-o { color: #28a745; font-weight: bold; font-size: 1.1rem;}
+        .mark-x { color: #dc3545; font-weight: bold; font-size: 1.1rem;}
+        .mark-skip { color: #6c757d; font-weight: bold; font-size: 1.1rem;}
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="question-screen">
+        <div class="header-area">
+            <h2 id="q-title">読み込み中...</h2>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <div id="q-progress" class="progress-text"></div>
+        </div>
+        <div id="q-text" class="question-text"></div>
+        <div id="feedback" class="feedback"></div>
+        <div id="options" class="options-container"></div>
+    </div>
+
+    <div id="result-screen" style="display: none;">
+        <div class="header-area">
+            <h2>学習結果</h2>
+        </div>
+        <table id="result-table">
+            <thead>
+                <tr>
+                    <th>タイプ</th><th>名前</th><th>範囲</th><th>積分値</th><th>定数</th><th>期待値</th><th>分散</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="result-buttons">
+            <button id="btn-wrong-retry" class="action-btn btn-wrong-retry" onclick="startMode('wrong_retry')" style="display: none;">間違えた問題をやる</button>
+            <button class="action-btn btn-retry" onclick="startMode('normal')">最初からやり直す</button>
+            <button class="action-btn btn-cross" onclick="startMode('cross')">横断的にやってみる</button>
+            <button class="action-btn btn-random" onclick="startMode('random')">ランダムにやってみる</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // サービスワーカーの登録
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('サービスワーカー登録成功!', reg))
+                .catch(err => console.log('サービスワーカー登録失敗: ', err));
+        });
+    }
+
+    // 問題データ定義
+    const questions = [
+        // --- タイプ1: x (Index 0-5) ---
+        {
+            title: "タイプ1 (x): 第1問",
+            text: "確率密度関数が、次のようになるのは？<br><br><span class='formula-line'>\\( \\displaystyle e^{-x} \\times \\text{(正の定数)} \\)</span>",
+            options: [ {t: "正規分布", c: false}, {t: "ポアソン分布", c: false}, {t: "指数分布", c: true}, {t: "ベータ分布", c: false} ]
+        },
+        {
+            title: "タイプ1 (x): 第2問",
+            text: "ふつう、\\( x \\)の範囲は？<br><br><span class='formula-line'>\\( \\displaystyle e^{-x} \\times \\text{(正の定数)} \\)</span>",
+            options: [ {t: "0 ～ \\( \\infty \\)", c: true}, {t: "\\( -\\infty \\) ～ \\( \\infty \\)", c: false}, {t: "1 ～ \\( \\infty \\)", c: false}, {t: "0 ～ 1", c: false} ]
+        },
+        {
+            title: "タイプ1 (x): 第3問",
+            text: "次の積分は？<br><br><span class='formula-line'>\\( \\displaystyle \\int_{0}^{\\infty} e^{-x} dx \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: true}, {t: "\\( 0 \\)", c: false}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+        {
+            title: "タイプ1 (x): 第4問",
+            text: "確率密度関数 \\( f(x) \\) は？<br><br><span class='reference-text'>参考：\\( \\displaystyle \\int_{0}^{\\infty} e^{-x} dx = 1 \\)</span>",
+            options: [ {t: "\\( f(x) = e^{-x} \\)", c: true}, {t: "\\( f(x) = 2e^{-x} \\)", c: false}, {t: "\\( f(x) = 0 \\)", c: false} ]
+        },
+        {
+            title: "タイプ1 (x): 第5問",
+            text: "期待値 \\( \\mathrm{E}[X] \\) は？<br><br><span class='formula-line'>確率密度関数は \\( \\displaystyle f(x) = e^{-x} \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: true}, {t: "\\( 0 \\)", c: false}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+        {
+            title: "タイプ1 (x): 第6問",
+            text: "分散 \\( \\mathrm{Var}(X) \\) は？<br><br><span class='formula-line'>確率密度関数は \\( \\displaystyle f(x) = e^{-x} \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: true}, {t: "\\( 0 \\)", c: false}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+
+        // --- タイプ2: λx (Index 6-11) ---
+        {
+            title: "タイプ2 (λx): 第1問",
+            text: "確率密度関数が、次のようになるのは？<br><br><span class='formula-line'>\\( \\displaystyle e^{-\\lambda x} \\times \\text{(正の定数)} \\)</span>",
+            options: [ {t: "指数分布", c: true}, {t: "ポアソン分布", c: false}, {t: "二項分布", c: false}, {t: "ベータ分布", c: false} ]
+        },
+        {
+            title: "タイプ2 (λx): 第2問",
+            text: "ふつう、\\( x \\)の範囲は？<br><br><span class='formula-line'>\\( \\displaystyle e^{-\\lambda x} \\times \\text{(正の定数)} \\)</span>",
+            options: [ {t: "0 ～ \\( \\infty \\)", c: true}, {t: "\\( -\\infty \\) ～ \\( \\infty \\)", c: false}, {t: "1 ～ \\( \\infty \\)", c: false}, {t: "0 ～ 1", c: false} ]
+        },
+        {
+            title: "タイプ2 (λx): 第3問",
+            text: "次の積分は？<br><br><span class='formula-line'>\\( \\displaystyle \\int_{0}^{\\infty} e^{-\\lambda x} dx \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: false}, {t: "\\( \\lambda \\)", c: false}, {t: "\\( \\displaystyle \\frac{1}{\\lambda} \\)", c: true}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+        {
+            title: "タイプ2 (λx): 第4問",
+            text: "確率密度関数 \\( f(x) \\) は？<br><br><span class='reference-text'>参考：\\( \\displaystyle \\int_{0}^{\\infty} e^{-\\lambda x} dx = \\frac{1}{\\lambda} \\)</span>",
+            options: [ {t: "\\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)", c: true}, {t: "\\( \\displaystyle f(x) = \\frac{1}{\\lambda} e^{-\\lambda x} \\)", c: false}, {t: "\\( f(x) = e^{-\\lambda x} \\)", c: false}, {t: "\\( f(x) = 0 \\)", c: false} ]
+        },
+        {
+            title: "タイプ2 (λx): 第5問",
+            text: "期待値 \\( \\mathrm{E}[X] \\) は？<br><br><span class='formula-line'>確率密度関数は \\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: false}, {t: "\\( \\lambda \\)", c: false}, {t: "\\( \\displaystyle \\frac{1}{\\lambda} \\)", c: true}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+        {
+            title: "タイプ2 (λx): 第6問",
+            text: "分散 \\( \\mathrm{Var}(X) \\) は？<br><br><span class='formula-line'>確率密度関数は \\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: false}, {t: "\\( \\lambda^2 \\)", c: false}, {t: "\\( \\displaystyle \\frac{1}{\\lambda^2} \\)", c: true}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+
+        // --- タイプ3: x/β (Index 12-17) [指数の縮小を防ぐため e^{\\displaystyle ...} を適用] ---
+        {
+            title: "タイプ3 (x/β): 第1問",
+            text: "確率密度関数が、次のようになるのは？<br><br><span class='formula-line'>\\( \\displaystyle e^{\\displaystyle -\\frac{x}{\\beta}} \\times \\text{(正の定数)} \\)</span>",
+            options: [ {t: "一様分布", c: false}, {t: "指数分布", c: true}, {t: "幾何分布", c: false}, {t: "ベータ分布", c: false} ]
+        },
+        {
+            title: "タイプ3 (x/β): 第2問",
+            text: "ふつう、\\( x \\)の範囲は？<br><br><span class='formula-line'>\\( \\displaystyle e^{\\displaystyle -\\frac{x}{\\beta}} \\times \\text{(正の定数)} \\)</span>",
+            options: [ {t: "0 ～ \\( \\infty \\)", c: true}, {t: "\\( -\\infty \\) ～ \\( \\infty \\)", c: false}, {t: "1 ～ \\( \\infty \\)", c: false}, {t: "0 ～ 1", c: false} ]
+        },
+        {
+            title: "タイプ3 (x/β): 第3問",
+            text: "次の積分は？<br><br><span class='formula-line'>\\( \\displaystyle \\int_{0}^{\\infty} e^{\\displaystyle -\\frac{x}{\\beta}} dx \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: false}, {t: "\\( \\beta \\)", c: true}, {t: "\\( \\displaystyle \\frac{1}{\\beta} \\)", c: false}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+        {
+            title: "タイプ3 (x/β): 第4問",
+            text: "確率密度関数 \\( f(x) \\) は？<br><br><span class='reference-text'>参考：\\( \\displaystyle \\int_{0}^{\\infty} e^{\\displaystyle -\\frac{x}{\\beta}} dx = \\beta \\)</span>",
+            options: [ {t: "\\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)", c: true}, {t: "\\( \\displaystyle f(x) = \\beta e^{\\displaystyle -\\frac{x}{\\beta}} \\)", c: false}, {t: "\\( \\displaystyle f(x) = e^{\\displaystyle -\\frac{x}{\\beta}} \\)", c: false}, {t: "\\( f(x) = 0 \\)", c: false} ]
+        },
+        {
+            title: "タイプ3 (x/β): 第5問",
+            text: "期待値 \\( \\mathrm{E}[X] \\) は？<br><br><span class='formula-line'>確率密度関数は \\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: false}, {t: "\\( \\beta \\)", c: true}, {t: "\\( \\displaystyle \\frac{1}{\\beta} \\)", c: false}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        },
+        {
+            title: "タイプ3 (x/β): 第6問",
+            text: "分散 \\( \\mathrm{Var}(X) \\) は？<br><br><span class='formula-line'>確率密度関数は \\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)</span>",
+            options: [ {t: "\\( 1 \\)", c: false}, {t: "\\( \\beta^2 \\)", c: true}, {t: "\\( \\displaystyle \\frac{1}{\\beta^2} \\)", c: false}, {t: "\\( \\infty \\)（発散）", c: false} ]
+        }
+    ];
+
+    let currentStep = 0;             
+    let sequence = [];               
+    let results = Array(18).fill(null); 
+    let hasAnsweredCurrent = false;
+
+    function startMode(mode) {
+        currentStep = 0;
+        hasAnsweredCurrent = false;
+
+        if (mode === 'normal') {
+            results = Array(18).fill(null);
+            sequence = Array.from({length: 18}, (_, i) => i);
+        } 
+        else if (mode === 'cross') {
+            results = Array(18).fill(null);
+            sequence = [];
+            for (let q = 0; q < 6; q++) {
+                sequence.push(q);       
+                sequence.push(q + 6);   
+                sequence.push(q + 12);  
+            }
+        } 
+        else if (mode === 'random') {
+            results = Array(18).fill(null);
+            sequence = Array.from({length: 18}, (_, i) => i);
+            for (let i = sequence.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+            }
+        }
+        else if (mode === 'wrong_retry') {
+            const prevResults = [...results];
+            results = Array(18).fill(null);
+            sequence = [];
+            for(let i = 0; i < 18; i++) {
+                if(prevResults[i] === false) {
+                    sequence.push(i);
+                }
+            }
+        }
+
+        document.getElementById('result-screen').style.display = "none";
+        document.getElementById('question-screen').style.display = "block";
+        renderQuestion();
+    }
+
+    async function renderQuestion() {
+        hasAnsweredCurrent = false;
+        const actualIndex = sequence[currentStep];
+        const q = questions[actualIndex];
+        
+        const progressPercent = (currentStep / sequence.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+        document.getElementById('q-progress').innerText = `(${currentStep + 1}/${sequence.length})`;
+        
+        document.getElementById('q-title').innerHTML = q.title;
+        document.getElementById('q-text').innerHTML = q.text;
+        document.getElementById('feedback').innerText = ""; 
+
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = "";
+        
+        q.options.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerHTML = opt.t;
+            btn.onclick = () => checkAnswer(btn, opt.c);
+            optionsDiv.appendChild(btn);
+        });
+
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'btn btn-skip';
+        skipBtn.innerHTML = '簡単すぎるので飛ばす';
+        skipBtn.onclick = () => skipQuestion();
+        optionsDiv.appendChild(skipBtn);
+
+        if (window.MathJax) {
+            await MathJax.typesetPromise();
+        }
+    }
+
+    function checkAnswer(btn, isCorrect) {
+        const feedback = document.getElementById('feedback');
+        const actualIndex = sequence[currentStep];
+        
+        if (!hasAnsweredCurrent) {
+            results[actualIndex] = isCorrect;
+            hasAnsweredCurrent = true;
+        }
+
+        if (isCorrect) {
+            btn.classList.add('correct');
+            feedback.innerText = "正解！";
+            feedback.style.color = "#28a745";
+            
+            Array.from(document.getElementById('options').children).forEach(b => {
+                b.disabled = true;
+                if(b !== btn) b.style.opacity = "0.6";
+            });
+            
+            setTimeout(() => {
+                currentStep++;
+                if (currentStep < sequence.length) {
+                    renderQuestion();
+                } else {
+                    showResult();
+                }
+            }, 1000);
+
+        } else {
+            btn.classList.add('wrong');
+            feedback.innerText = "不正解... 他の選択肢を選んでください";
+            feedback.style.color = "#dc3545";
+        }
+    }
+
+    function skipQuestion() {
+        const actualIndex = sequence[currentStep];
+        results[actualIndex] = 'skipped';
+        
+        currentStep++;
+        if (currentStep < sequence.length) {
+                    renderQuestion();
+                } else {
+                    showResult();
+                }
+    }
+
+    async function showResult() {
+        document.getElementById('question-screen').style.display = "none";
+        document.getElementById('result-screen').style.display = "block";
+
+        const tbody = document.querySelector('#result-table tbody');
+        tbody.innerHTML = "";
+        
+        const types = [
+            "\\( \\displaystyle f(x) = e^{-x} \\)",
+            "\\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)",
+            "\\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)"
+        ];
+
+        let wrongCount = 0;
+
+        for (let i = 0; i < 3; i++) {
+            const tr = document.createElement('tr');
+            const tdType = document.createElement('td');
+            tdType.innerHTML = types[i];
+            tdType.style.fontWeight = "bold";
+            tr.appendChild(tdType);
+
+            for (let j = 0; j < 6; j++) {
+                const td = document.createElement('td');
+                const res = results[i * 6 + j];
+                
+                if (res === true) {
+                    td.innerHTML = '<span class="mark-o">○</span>';
+                } else if (res === false) {
+                    td.innerHTML = '<span class="mark-x">×</span>';
+                    wrongCount++;
+                } else if (res === 'skipped') {
+                    td.innerHTML = '<span class="mark-skip">ー</span>';
+                } else {
+                    td.innerHTML = '';
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+
+        const wrongRetryBtn = document.getElementById('btn-wrong-retry');
+        if (wrongCount > 0) {
+            wrongRetryBtn.style.display = "block";
+            wrongRetryBtn.innerText = `間違えた問題をやる (${wrongCount}問)`;
+        } else {
+            wrongRetryBtn.style.display = "none";
+        }
+
+        if (window.MathJax) {
+            await MathJax.typesetPromise();
+        }
+    }
+
+    startMode('normal');
+</script>
+
+</body>
+</html>

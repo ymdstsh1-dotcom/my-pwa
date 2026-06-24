@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>指数分布マスター</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon192.png">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#007bff">
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* CSS変数（カスタムプロパティ）の定義 */
+        :root {
+            --primary-color: #007bff;
+            --primary-dark: #0062cc;
+            --success-color: #28a745;
+            --success-dark: #1e7e34;
+            --success-light: #d4edda;
+            --success-border: #c3e6cb;
+            --success-bottom: #a1c9ae;
+            --danger-color: #dc3545;
+            --danger-dark: #bd2130;
+            --danger-light: #f8d7da;
+            --danger-border: #f5c6cb;
+            --danger-bottom: #dfb0b4;
+            --info-color: #17a2b8;
+            --info-dark: #117a8b;
+            --skip-color: #c53030;
+            --skip-light: #fff5f5;
+            --skip-border: #feb2b2;
+            --skip-bottom: #fc8181;
+            --gray-color: #6c757d;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        body {
+            padding: 15px;
+        }
+
+        /* ユーティリティクラス */
+        .hidden {
+            display: none !important;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 16px;
+        }
+
+        .header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            gap: 12px;
+        }
+        h2 {
+            font-size: 1.1rem;
+            color: #555;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 6px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--primary-color);
+            transition: width 0.2s ease;
+        }
+        .progress-text {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            min-height: 120px;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .formula-line {
+            font-size: 1.2em;
+            display: inline-block;
+        }
+        
+        .reference-text {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            font-size: 1.2em;
+            color: #444;
+        }
+
+        .feedback {
+            height: 30px;
+            line-height: 30px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            background: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-bottom: 4px solid #b2b6ba;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active {
+            border-bottom-width: 1px;
+            margin-top: 3px;
+            margin-bottom: -3px;
+            background: #e2e6ea;
+        }
+        
+        /* 詳細度を上げて!importantを排除 */
+        .options-container .btn.correct {
+            background: var(--success-light);
+            border-color: var(--success-border);
+            border-bottom-color: var(--success-bottom);
+        }
+        .options-container .btn.wrong {
+            background: var(--danger-light);
+            border-color: var(--danger-border);
+            border-bottom-color: var(--danger-bottom);
+        }
+        
+        .btn-skip {
+            background: var(--skip-light);
+            border-color: var(--skip-border);
+            border-bottom: 4px solid var(--skip-bottom);
+            color: var(--skip-color);
+            text-align: center;
+            font-weight: bold;
+        }
+        .btn-skip:active {
+            border-bottom-width: 1px;
+            margin-top: 3px;
+            margin-bottom: -3px;
+            background: #fed7d7;
+        }
+        
+        .result-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        
+        /* カラー変数適用 */
+        .btn-retry { background: var(--success-color); border-bottom: 4px solid var(--success-dark); }
+        .btn-retry:active { border-bottom-width: 1px; transform: translateY(3px); background: var(--success-dark); }
+        
+        .btn-wrong-retry { background: var(--danger-color); border-bottom: 4px solid var(--danger-dark); }
+        .btn-wrong-retry:active { border-bottom-width: 1px; transform: translateY(3px); background: var(--danger-dark); }
+
+        .btn-cross { background: var(--primary-color); border-bottom: 4px solid var(--primary-dark); }
+        .btn-cross:active { border-bottom-width: 1px; transform: translateY(3px); background: var(--primary-dark); }
+        
+        .btn-random { background: var(--info-color); border-bottom: 4px solid var(--info-dark); }
+        .btn-random:active { border-bottom-width: 1px; transform: translateY(3px); background: var(--info-dark); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            text-align: center;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 8px 4px;
+            font-size: 0.85rem;
+        }
+        th { background: #e9ecef; }
+        .mark-o { color: var(--success-color); font-weight: bold; font-size: 1.1rem;}
+        .mark-x { color: var(--danger-color); font-weight: bold; font-size: 1.1rem;}
+        .mark-skip { color: var(--gray-color); font-weight: bold; font-size: 1.1rem;}
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="question-screen">
+        <div class="header-area">
+            <h2 id="q-title">読み込み中...</h2>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <div id="q-progress" class="progress-text"></div>
+        </div>
+        <div id="q-text" class="question-text"></div>
+        <div id="feedback" class="feedback"></div>
+        <div id="options" class="options-container"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <div class="header-area">
+            <h2>学習結果</h2>
+        </div>
+        <table id="result-table">
+            <thead>
+                <tr>
+                    <th>タイプ</th><th>名前</th><th>範囲</th><th>積分値</th><th>定数</th><th>期待値</th><th>分散</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="result-buttons">
+            <button id="btn-wrong-retry" class="action-btn btn-wrong-retry hidden">間違えた問題をやる</button>
+            <button id="btn-retry-normal" class="action-btn btn-retry">最初からやり直す</button>
+            <button id="btn-retry-cross" class="action-btn btn-cross">横断的にやってみる</button>
+            <button id="btn-retry-random" class="action-btn btn-random">ランダムにやってみる</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // サービスワーカーの登録
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('サービスワーカー登録成功!', reg))
+                .catch(err => console.log('サービスワーカー登録失敗: ', err));
+        });
+    }
+
+    // ==========================================
+    // 定数
+    // ==========================================
+    const QUESTIONS_PER_TYPE = 6;
+    const TYPE_COUNT = 3;
+
+    const MODE = {
+        NORMAL: '最初からやり直す',
+        CROSS: '横断的にやってみる',
+        RANDOM: 'ランダムにやってみる',
+        WRONG_RETRY: '間違えた問題をやる'
+    };
+
+    const RESULT_TYPE = {
+        UNANSWERED: 'unanswered',
+        CORRECT: 'correct',
+        WRONG: 'wrong',
+        SKIPPED: 'skipped'
+    };
+
+    // ==========================================
+    // 問題データ（タイプ定義 + テンプレートから生成）
+    // ==========================================
+    const RANGE_OPTIONS = [
+        { t: "0 ～ \\( \\infty \\)", c: true },
+        { t: "\\( -\\infty \\) ～ \\( \\infty \\)", c: false },
+        { t: "1 ～ \\( \\infty \\)", c: false },
+        { t: "0 ～ 1", c: false }
+    ];
+
+    const DIVERGE_OPTION = { t: "\\( \\infty \\)（発散）", c: false };
+
+    const DISTRIBUTION_TYPES = [
+        {
+            titlePrefix: 'タイプ1 (x)',
+            formulaLine: '\\( \\displaystyle e^{-x} \\times \\text{(正の定数)} \\)',
+            resultPdf: '\\( \\displaystyle f(x) = e^{-x} \\)',
+            distributionOptions: [
+                { t: "正規分布", c: false },
+                { t: "ポアソン分布", c: false },
+                { t: "指数分布", c: true },
+                { t: "ベータ分布", c: false }
+            ],
+            integralExpr: '\\( \\displaystyle \\int_{0}^{\\infty} e^{-x} dx \\)',
+            integralRef: '\\( \\displaystyle \\int_{0}^{\\infty} e^{-x} dx = 1 \\)',
+            integralOptions: [
+                { t: "\\( 1 \\)", c: true },
+                { t: "\\( 0 \\)", c: false },
+                DIVERGE_OPTION
+            ],
+            pdfHint: '\\( \\displaystyle f(x) = e^{-x} \\)',
+            pdfOptions: [
+                { t: "\\( f(x) = e^{-x} \\)", c: true },
+                { t: "\\( f(x) = 2e^{-x} \\)", c: false },
+                { t: "\\( f(x) = 0 \\)", c: false }
+            ],
+            expectedOptions: [
+                { t: "\\( 1 \\)", c: true },
+                { t: "\\( 0 \\)", c: false },
+                DIVERGE_OPTION
+            ],
+            varianceOptions: [
+                { t: "\\( 1 \\)", c: true },
+                { t: "\\( 0 \\)", c: false },
+                DIVERGE_OPTION
+            ]
+        },
+        {
+            titlePrefix: 'タイプ2 (λx)',
+            formulaLine: '\\( \\displaystyle e^{-\\lambda x} \\times \\text{(正の定数)} \\)',
+            resultPdf: '\\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)',
+            distributionOptions: [
+                { t: "指数分布", c: true },
+                { t: "ポアソン分布", c: false },
+                { t: "二項分布", c: false },
+                { t: "ベータ分布", c: false }
+            ],
+            integralExpr: '\\( \\displaystyle \\int_{0}^{\\infty} e^{-\\lambda x} dx \\)',
+            integralRef: '\\( \\displaystyle \\int_{0}^{\\infty} e^{-\\lambda x} dx = \\frac{1}{\\lambda} \\)',
+            integralOptions: [
+                { t: "\\( 1 \\)", c: false },
+                { t: "\\( \\lambda \\)", c: false },
+                { t: "\\( \\displaystyle \\frac{1}{\\lambda} \\)", c: true },
+                DIVERGE_OPTION
+            ],
+            pdfHint: '\\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)',
+            pdfOptions: [
+                { t: "\\( \\displaystyle f(x) = \\lambda e^{-\\lambda x} \\)", c: true },
+                { t: "\\( \\displaystyle f(x) = \\frac{1}{\\lambda} e^{-\\lambda x} \\)", c: false },
+                { t: "\\( f(x) = e^{-\\lambda x} \\)", c: false },
+                { t: "\\( f(x) = 0 \\)", c: false }
+            ],
+            expectedOptions: [
+                { t: "\\( 1 \\)", c: false },
+                { t: "\\( \\lambda \\)", c: false },
+                { t: "\\( \\displaystyle \\frac{1}{\\lambda} \\)", c: true },
+                DIVERGE_OPTION
+            ],
+            varianceOptions: [
+                { t: "\\( 1 \\)", c: false },
+                { t: "\\( \\lambda^2 \\)", c: false },
+                { t: "\\( \\displaystyle \\frac{1}{\\lambda^2} \\)", c: true },
+                DIVERGE_OPTION
+            ]
+        },
+        {
+            titlePrefix: 'タイプ3 (x/β)',
+            formulaLine: '\\( \\displaystyle e^{\\displaystyle -\\frac{x}{\\beta}} \\times \\text{(正の定数)} \\)',
+            resultPdf: '\\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)',
+            distributionOptions: [
+                { t: "一様分布", c: false },
+                { t: "指数分布", c: true },
+                { t: "幾何分布", c: false },
+                { t: "ベータ分布", c: false }
+            ],
+            integralExpr: '\\( \\displaystyle \\int_{0}^{\\infty} e^{\\displaystyle -\\frac{x}{\\beta}} dx \\)',
+            integralRef: '\\( \\displaystyle \\int_{0}^{\\infty} e^{\\displaystyle -\\frac{x}{\\beta}} dx = \\beta \\)',
+            integralOptions: [
+                { t: "\\( 1 \\)", c: false },
+                { t: "\\( \\beta \\)", c: true },
+                { t: "\\( \\displaystyle \\frac{1}{\\beta} \\)", c: false },
+                DIVERGE_OPTION
+            ],
+            pdfHint: '\\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)',
+            pdfOptions: [
+                { t: "\\( \\displaystyle f(x) = \\frac{1}{\\beta} e^{\\displaystyle -\\frac{x}{\\beta}} \\)", c: true },
+                { t: "\\( \\displaystyle f(x) = \\beta e^{\\displaystyle -\\frac{x}{\\beta}} \\)", c: false },
+                { t: "\\( \\displaystyle f(x) = e^{\\displaystyle -\\frac{x}{\\beta}} \\)", c: false },
+                { t: "\\( f(x) = 0 \\)", c: false }
+            ],
+            expectedOptions: [
+                { t: "\\( 1 \\)", c: false },
+                { t: "\\( \\beta \\)", c: true },
+                { t: "\\( \\displaystyle \\frac{1}{\\beta} \\)", c: false },
+                DIVERGE_OPTION
+            ],
+            varianceOptions: [
+                { t: "\\( 1 \\)", c: false },
+                { t: "\\( \\beta^2 \\)", c: true },
+                { t: "\\( \\displaystyle \\frac{1}{\\beta^2} \\)", c: false },
+                DIVERGE_OPTION
+            ]
+        }
+    ];
+
+    const QUESTION_TEMPLATES = [
+        (type, num) => ({
+            title: `${type.titlePrefix}: 第${num}問`,
+            text: `確率密度関数が、次のようになるのは？<br><br><span class='formula-line'>${type.formulaLine}</span>`,
+            options: type.distributionOptions
+        }),
+        (type, num) => ({
+            title: `${type.titlePrefix}: 第${num}問`,
+            text: `ふつう、\\( x \\)の範囲は？<br><br><span class='formula-line'>${type.formulaLine}</span>`,
+            options: RANGE_OPTIONS
+        }),
+        (type, num) => ({
+            title: `${type.titlePrefix}: 第${num}問`,
+            text: `次の積分は？<br><br><span class='formula-line'>${type.integralExpr}</span>`,
+            options: type.integralOptions
+        }),
+        (type, num) => ({
+            title: `${type.titlePrefix}: 第${num}問`,
+            text: `確率密度関数 \\( f(x) \\) は？<br><br><span class='reference-text'>参考：${type.integralRef}</span>`,
+            options: type.pdfOptions
+        }),
+        (type, num) => ({
+            title: `${type.titlePrefix}: 第${num}問`,
+            text: `期待値 \\( \\mathrm{E}[X] \\) は？<br><br><span class='formula-line'>確率密度関数は ${type.pdfHint}</span>`,
+            options: type.expectedOptions
+        }),
+        (type, num) => ({
+            title: `${type.titlePrefix}: 第${num}問`,
+            text: `分散 \\( \\mathrm{Var}(X) \\) は？<br><br><span class='formula-line'>確率密度関数は ${type.pdfHint}</span>`,
+            options: type.varianceOptions
+        })
+    ];
+
+    function buildQuestions() {
+        const questions = [];
+        for (let typeIndex = 0; typeIndex < TYPE_COUNT; typeIndex++) {
+            const type = DISTRIBUTION_TYPES[typeIndex];
+            for (let q = 0; q < QUESTIONS_PER_TYPE; q++) {
+                questions.push(QUESTION_TEMPLATES[q](type, q + 1));
+            }
+        }
+        return questions;
+    }
+
+    const questions = buildQuestions();
+
+    // ==========================================
+    // 状態管理
+    // ==========================================
+
+    const state = {
+        currentStep: 0,
+        sequence: [],
+        results: [],
+        hasAnsweredCurrent: false
+    };
+
+    // ==========================================
+    // ユーティリティ・シーケンス生成
+    // ==========================================
+    function createInitialResults() {
+        return Array(questions.length).fill(RESULT_TYPE.UNANSWERED);
+    }
+
+    function shuffle(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function generateNormalSequence() {
+        return Array.from({length: questions.length}, (_, i) => i);
+    }
+
+    function generateCrossSequence() {
+        const seq = [];
+        for (let q = 0; q < QUESTIONS_PER_TYPE; q++) {
+            for (let t = 0; t < TYPE_COUNT; t++) {
+                seq.push(q + t * QUESTIONS_PER_TYPE);
+            }
+        }
+        return seq;
+    }
+
+    function generateWrongRetrySequence() {
+        const seq = [];
+        for (let i = 0; i < questions.length; i++) {
+            if (state.results[i] === RESULT_TYPE.WRONG) {
+                seq.push(i);
+            }
+        }
+        return seq;
+    }
+
+    // ==========================================
+    // メインロジック
+    // ==========================================
+    function startMode(mode) {
+        state.currentStep = 0;
+        state.hasAnsweredCurrent = false;
+
+        if (mode !== MODE.WRONG_RETRY) {
+            state.results = createInitialResults();
+        }
+
+        switch (mode) {
+            case MODE.NORMAL:
+                state.sequence = generateNormalSequence();
+                break;
+            case MODE.CROSS:
+                state.sequence = generateCrossSequence();
+                break;
+            case MODE.RANDOM:
+                state.sequence = shuffle(generateNormalSequence());
+                break;
+            case 'wrong_retry':
+                state.sequence = generateWrongRetrySequence();
+                state.results = createInitialResults();
+                break;
+        }
+
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('question-screen').classList.remove('hidden');
+        renderQuestion();
+    }
+
+    // 重複していた「次へ進む」処理の共通化
+    function proceedToNextStep() {
+        state.currentStep++;
+        if (state.currentStep < state.sequence.length) {
+            renderQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    async function renderQuestion() {
+        state.hasAnsweredCurrent = false;
+        const actualIndex = state.sequence[state.currentStep];
+        const q = questions[actualIndex];
+        
+        const progressPercent = (state.currentStep / state.sequence.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+        document.getElementById('q-progress').innerText = `(${state.currentStep + 1}/${state.sequence.length})`;
+        
+        document.getElementById('q-title').innerHTML = q.title;
+        document.getElementById('q-text').innerHTML = q.text;
+        document.getElementById('feedback').innerText = ""; 
+
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = "";
+        
+        q.options.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerHTML = opt.t;
+            btn.addEventListener('click', () => checkAnswer(btn, opt.c));
+            optionsDiv.appendChild(btn);
+        });
+
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'btn btn-skip';
+        skipBtn.innerHTML = '簡単すぎるので飛ばす';
+        skipBtn.addEventListener('click', () => skipQuestion());
+        optionsDiv.appendChild(skipBtn);
+
+        if (window.MathJax) {
+            await MathJax.typesetPromise();
+        }
+    }
+
+    function checkAnswer(btn, isCorrect) {
+        const feedback = document.getElementById('feedback');
+        const actualIndex = state.sequence[state.currentStep];
+        
+        if (!state.hasAnsweredCurrent) {
+            state.results[actualIndex] = isCorrect ? RESULT_TYPE.CORRECT : RESULT_TYPE.WRONG;
+            state.hasAnsweredCurrent = true;
+        }
+
+        if (isCorrect) {
+            btn.classList.add('correct');
+            feedback.innerText = "正解！";
+            feedback.style.color = "var(--success-color)";
+            
+            Array.from(document.getElementById('options').children).forEach(b => {
+                b.disabled = true;
+                if(b !== btn) b.style.opacity = "0.6";
+            });
+            
+            setTimeout(proceedToNextStep, 1000);
+
+        } else {
+            btn.classList.add('wrong');
+            feedback.innerText = "不正解... 他の選択肢を選んでください";
+            feedback.style.color = "var(--danger-color)";
+        }
+    }
+
+    function skipQuestion() {
+        const actualIndex = state.sequence[state.currentStep];
+        state.results[actualIndex] = RESULT_TYPE.SKIPPED;
+        proceedToNextStep();
+    }
+
+    async function showResult() {
+        document.getElementById('question-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+
+        const tbody = document.querySelector('#result-table tbody');
+        tbody.innerHTML = "";
+        
+        let wrongCount = 0;
+
+        for (let i = 0; i < TYPE_COUNT; i++) {
+            const tr = document.createElement('tr');
+            const tdType = document.createElement('td');
+            tdType.innerHTML = DISTRIBUTION_TYPES[i].resultPdf;
+            tdType.style.fontWeight = "bold";
+            tr.appendChild(tdType);
+
+            for (let j = 0; j < QUESTIONS_PER_TYPE; j++) {
+                const td = document.createElement('td');
+                const res = state.results[i * QUESTIONS_PER_TYPE + j];
+                
+                if (res === RESULT_TYPE.CORRECT) {
+                    td.innerHTML = '<span class="mark-o">○</span>';
+                } else if (res === RESULT_TYPE.WRONG) {
+                    td.innerHTML = '<span class="mark-x">×</span>';
+                    wrongCount++;
+                } else if (res === RESULT_TYPE.SKIPPED) {
+                    td.innerHTML = '<span class="mark-skip">ー</span>';
+                } else {
+                    td.innerHTML = '';
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+
+        const wrongRetryBtn = document.getElementById('btn-wrong-retry');
+        if (wrongCount > 0) {
+            wrongRetryBtn.classList.remove('hidden');
+            wrongRetryBtn.innerText = `間違えた問題をやる (${wrongCount}問)`;
+        } else {
+            wrongRetryBtn.classList.add('hidden');
+        }
+
+        if (window.MathJax) {
+            await MathJax.typesetPromise();
+        }
+    }
+
+    // ==========================================
+    // 初期化・イベントリスナー設定
+    // ==========================================
+    function setupEventListeners() {
+        document.getElementById('btn-wrong-retry').addEventListener('click', () => startMode(MODE.WRONG_RETRY));
+        document.getElementById('btn-retry-normal').addEventListener('click', () => startMode(MODE.NORMAL));
+        document.getElementById('btn-retry-cross').addEventListener('click', () => startMode(MODE.CROSS));
+        document.getElementById('btn-retry-random').addEventListener('click', () => startMode(MODE.RANDOM));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setupEventListeners();
+        startMode(MODE.NORMAL);
+    });
+</script>
+
+</body>
+</html>

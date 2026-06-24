@@ -1,9 +1,11 @@
-const CACHE_NAME = 'v4-cache-quadratic'; // v3 から v4 にアップ
+const CACHE_NAME = 'v5-cache-quadratic';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {

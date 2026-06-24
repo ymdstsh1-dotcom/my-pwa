@@ -91,6 +91,86 @@
         }
         .correct-text { color: #4caf50; }
         .incorrect-text { color: #f44336; }
+
+        /* アプリインストールバナー */
+        .install-banner {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+            transform: translateY(110%);
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: none;
+        }
+        .install-banner.show {
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .install-banner-inner {
+            max-width: 400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border: 2px solid #e2e8f0;
+        }
+        .install-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+        .install-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .install-text strong {
+            display: block;
+            font-size: 0.95rem;
+            color: #333;
+        }
+        .install-text span {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+        }
+        .install-btn {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #8ec5fc, #e0c3fc);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #b8d4f0;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .install-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #b8d4f0;
+        }
+        .install-dismiss {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            font-size: 1.2rem;
+            line-height: 1;
+            color: #94a3b8;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +186,18 @@
 
     <div class="options-container" id="optionsContainer"></div>
     <div class="result" id="resultMessage"></div>
+</div>
+
+<div id="installBanner" class="install-banner" hidden>
+    <div class="install-banner-inner">
+        <img src="icon-192.png" alt="" class="install-icon" width="44" height="44">
+        <div class="install-text">
+            <strong>2次関数アプリ</strong>
+            <span id="installSubtext">アプリとしてインストールしよう</span>
+        </div>
+        <button type="button" id="installBtn" class="install-btn">インストール</button>
+        <button type="button" id="installDismiss" class="install-dismiss" aria-label="閉じる">×</button>
+    </div>
 </div>
 
 <script>
@@ -264,6 +356,59 @@
                 .catch(err => console.error('SW registration failed:', err));
         });
     }
+
+    // PWA インストールバナー（Android / PC Chrome）
+    (function () {
+        const banner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const dismissBtn = document.getElementById('installDismiss');
+        const installSubtext = document.getElementById('installSubtext');
+        let deferredPrompt = null;
+
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+            installSubtext.textContent = 'ホーム画面に追加して使おう';
+            installBtn.textContent = '追加';
+        }
+
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+
+        function hideBanner() {
+            banner.classList.remove('show');
+            setTimeout(() => { banner.hidden = true; }, 350);
+        }
+
+        function showBanner() {
+            if (isStandalone || localStorage.getItem('installBannerDismissed')) return;
+            banner.hidden = false;
+            requestAnimationFrame(() => banner.classList.add('show'));
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showBanner();
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            hideBanner();
+        });
+
+        dismissBtn.addEventListener('click', () => {
+            localStorage.setItem('installBannerDismissed', '1');
+            hideBanner();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            hideBanner();
+        });
+    })();
 </script>
 
 </body>

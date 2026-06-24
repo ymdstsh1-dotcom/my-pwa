@@ -1,0 +1,184 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #1a1a2e;
+    margin: 0;
+    min-height: 100dvh;
+    font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    line-height: 1.6;
+}
+
+.app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.app-header h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.integral-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0;
+    overflow-x: auto;
+}
+
+#problem-math {
+    width: 100%;
+    text-align: center;
+    font-size: 185%;
+}
+
+#formula-math,
+#solution-math {
+    width: 100%;
+    text-align: center;
+}
+
+.answer-form {
+    margin: 0;
+}
+
+.solution-steps {
+    margin-top: 0.75rem;
+    padding-top: 0;
+    border-top: none;
+}
+
+.solution-steps.is-hidden {
+    display: none;
+}
+
+.answer-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.answer-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    border: 2px solid #d0d5dd;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.answer-input:focus {
+    border-color: #4a6fa5;
+}
+
+.answer-input:disabled {
+    background-color: #f5f5f5;
+    color: #888;
+}
+
+.button-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.button-row.is-answered {
+    gap: 0;
+}
+
+.btn-next-only {
+    flex: 1;
+}
+
+.btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #4a6fa5;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #e8ecf1;
+    color: #1a1a2e;
+}
+
+.btn-outline {
+    background-color: #fff;
+    color: #4a6fa5;
+    border: 2px solid #4a6fa5;
+}
+
+.feedback {
+    min-height: 1.5rem;
+    margin: 1rem 0 0;
+    font-weight: 600;
+}
+
+.feedback-correct {
+    color: #1a7f4b;
+}
+
+.feedback-incorrect {
+    color: #c0392b;
+}
+
+.score {
+    margin: 0.75rem 0 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.app-footer {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #555;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.app-footer.is-hidden {
+    display: none;
+}
+
+@media (max-width: 400px) {
+    .button-row:not(.is-answered) {
+        flex-direction: column;
+    }
+}

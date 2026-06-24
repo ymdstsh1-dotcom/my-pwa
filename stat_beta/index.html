@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4a6fa5">
+    <meta name="description" content="ベータ関数の0から1までの積分を暗算で練習するアプリ">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Beta積分">
+    <title>Beta積分トレーニング</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [["\\(", "\\)"]],
+                displayMath: [["\\[", "\\]"]],
+            },
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+    <main class="app">
+        <header class="app-header">
+            <h1>Beta積分トレーニング</h1>
+        </header>
+
+        <section class="card problem-card">
+            <div class="integral-display" aria-label="問題">
+                <div id="problem-math"></div>
+            </div>
+        </section>
+
+        <section class="card answer-card">
+            <form id="answer-form" class="answer-form">
+                <label class="answer-label" for="answer-input">答え</label>
+                <input
+                    id="answer-input"
+                    class="answer-input"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="分数で入力（例: 2/7）"
+                >
+
+                <div class="button-row" id="button-row">
+                    <button id="check-button" class="btn btn-primary" type="submit">答え合わせ</button>
+                    <button id="give-up-button" class="btn btn-outline" type="button">わからない</button>
+                    <button id="next-button" class="btn btn-secondary btn-next-only" type="button" hidden>次の問題</button>
+                </div>
+            </form>
+
+            <p id="feedback" class="feedback" aria-live="polite"></p>
+
+            <div id="solution-steps" class="solution-steps is-hidden" aria-live="polite">
+                <div id="solution-math"></div>
+            </div>
+
+            <p class="score">正解数: <span id="score">0 / 0</span></p>
+        </section>
+
+        <footer class="app-footer is-hidden" id="formula-footer">
+            <div id="formula-math"></div>
+        </footer>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

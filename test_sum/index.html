@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1桁足し算テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        #question {
+            font-size: 1.5rem;
+            margin: 1em 0;
+        }
+        #answer {
+            font-size: 1.2rem;
+            width: 80px;
+            padding: 8px;
+        }
+        button {
+            font-size: 1rem;
+            padding: 8px 16px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+        #feedback {
+            font-weight: bold;
+            min-height: 1.5em;
+            margin-top: 1em;
+        }
+        .correct { color: #28a745; }
+        .wrong { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>1桁足し算</h1>
+    <p id="question">読み込み中...</p>
+    <div>
+        <input id="answer" type="number" min="0" max="18" inputmode="numeric">
+        <button id="submit">答える</button>
+    </div>
+    <p id="feedback"></p>
+    <button id="next">次の問題</button>
+
+    <script>
+        let current = null;
+
+        async function loadQuestion() {
+            const res = await fetch("/api/question", { method: "POST" });
+            current = await res.json();
+            document.getElementById("question").textContent =
+                `${current.x} + ${current.y} = ?`;
+            document.getElementById("answer").value = "";
+            document.getElementById("feedback").textContent = "";
+            document.getElementById("feedback").className = "";
+            document.getElementById("answer").focus();
+        }
+
+        async function submitAnswer() {
+            const z = Number(document.getElementById("answer").value);
+            const res = await fetch("/api/answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: current.id, z }),
+            });
+            const data = await res.json();
+            const feedback = document.getElementById("feedback");
+            feedback.textContent = data.correct ? "正解！" : "不正解";
+            feedback.className = data.correct ? "correct" : "wrong";
+        }
+
+        document.getElementById("submit").addEventListener("click", submitAnswer);
+        document.getElementById("next").addEventListener("click", loadQuestion);
+        document.getElementById("answer").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") submitAnswer();
+        });
+
+        loadQuestion();
+    </script>
+</body>
+</html>

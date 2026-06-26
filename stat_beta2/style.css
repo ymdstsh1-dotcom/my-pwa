@@ -286,8 +286,9 @@ mjx-container {
     display: none;
 }
 
-.btn-next {
-    margin-top: 18px;
+.explanation .btn-next {
+    margin-top: 16px;
+    width: 100%;
 }
 
 /* クリア画面 */

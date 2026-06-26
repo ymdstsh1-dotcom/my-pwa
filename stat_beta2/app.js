@@ -5,8 +5,8 @@
 const QUESTIONS = [
     {
         problem: "\\[ \\Gamma(1)= \\;? \\]",
-        choices: ["0! = 1", "1! = 1"],
-        correct: 0,
+        choices: ["0", "1"],
+        correct: 1,
         explanation: "\\[ \\Gamma(n)=(n-1)! \\ \\text{なので}\\ \\Gamma(1)=0!=1 \\]",
     },
     {
@@ -120,6 +120,26 @@ function applyQuestionColors(tex, index) {
 }
 
 let current = 0;
+let wrongOnce = false;
+let advanceTimer = null;
+
+function clearAdvanceTimer() {
+    if (advanceTimer !== null) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+    }
+}
+
+function showExplanation(tex) {
+    els.explanationMath.innerHTML = applyQuestionColors(tex, current);
+    els.explanation.classList.remove("is-hidden");
+    typeset([els.explanationMath]);
+}
+
+function hideExplanation() {
+    els.explanation.classList.add("is-hidden");
+    els.explanationMath.innerHTML = "";
+}
 
 const screens = {
     start: document.getElementById("screen-start"),
@@ -154,6 +174,8 @@ function typeset(elements) {
 
 function renderQuestion() {
     const q = QUESTIONS[current];
+    clearAdvanceTimer();
+    wrongOnce = false;
 
     // 進捗
     els.progressText.textContent = `${current + 1} / ${QUESTIONS.length}`;
@@ -165,7 +187,7 @@ function renderQuestion() {
     // フィードバック・解説リセット
     els.feedback.textContent = "";
     els.feedback.className = "feedback";
-    els.explanation.classList.add("is-hidden");
+    hideExplanation();
     els.next.hidden = true;
 
     // 選択肢ボタン生成（第6問のみ2×2）
@@ -175,8 +197,12 @@ function renderQuestion() {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "choice";
-        const colored = applyQuestionColors(choiceTex, current);
-        btn.innerHTML = `\\(${colored}\\)`;
+        if (/^\d+$/.test(choiceTex)) {
+            btn.textContent = choiceTex;
+        } else {
+            const colored = applyQuestionColors(choiceTex, current);
+            btn.innerHTML = `\\(${colored}\\)`;
+        }
         btn.addEventListener("click", () => handleChoice(index, btn));
         els.choices.appendChild(btn);
     });
@@ -186,30 +212,34 @@ function renderQuestion() {
 
 function handleChoice(index, btn) {
     const q = QUESTIONS[current];
+    if (btn.disabled && btn.classList.contains("is-wrong")) return;
 
     if (index === q.correct) {
-        // 正解：他を無効化し、解説を表示して次へ進めるように
         btn.classList.add("is-correct");
         Array.from(els.choices.children).forEach((c) => (c.disabled = true));
         els.feedback.textContent = "正解！";
         els.feedback.className = "feedback correct";
 
-        els.explanationMath.innerHTML = applyQuestionColors(q.explanation, current);
-        els.explanation.classList.remove("is-hidden");
-        typeset([els.explanationMath]);
-
-        els.next.hidden = false;
-        els.next.textContent = current === QUESTIONS.length - 1 ? "結果を見る" : "次の問題";
+        if (wrongOnce) {
+            // 一度誤答してから正解：解説はそのまま、下に次へボタン
+            els.next.hidden = false;
+            els.next.textContent = current === QUESTIONS.length - 1 ? "結果を見る" : "次の問題";
+        } else {
+            // 初回正解：1秒後に自動で次へ
+            advanceTimer = setTimeout(goNext, 1000);
+        }
     } else {
-        // 不正解：もう一度（正解するまで進めない）
+        wrongOnce = true;
         btn.classList.add("is-wrong");
         btn.disabled = true;
         els.feedback.textContent = "もう一度！";
         els.feedback.className = "feedback wrong";
+        showExplanation(q.explanation);
     }
 }
 
 function goNext() {
+    clearAdvanceTimer();
     if (current < QUESTIONS.length - 1) {
         current += 1;
         renderQuestion();

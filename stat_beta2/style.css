@@ -1,0 +1,314 @@
+:root {
+    --bg: #eef1f8;
+    --card: #ffffff;
+    --primary: #5b6cff;
+    --primary-dark: #4453e0;
+    --text: #20242e;
+    --muted: #6b7280;
+    --correct: #1e9e54;
+    --correct-bg: #e6f7ee;
+    --wrong: #d8385a;
+    --wrong-bg: #fdecf0;
+    --border: #d9deea;
+    --radius: 16px;
+    --shadow: 0 6px 20px rgba(40, 50, 90, 0.08);
+    --problem-bg: #f4f6fb;
+    --problem-border: #c8d0e4;
+    --btn-face: #ffffff;
+    --btn-edge: #b8c0d4;
+    --btn-edge-active: #9aa3ba;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Hiragino Kaku Gothic ProN", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    line-height: 1.5;
+}
+
+.app {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: max(env(safe-area-inset-top), 16px) 16px max(env(safe-area-inset-bottom), 16px);
+    min-height: 100dvh;
+}
+
+/* 画面切り替え */
+.screen {
+    display: none;
+    animation: fade 0.25s ease;
+}
+.screen.is-active {
+    display: block;
+}
+.screen-center.is-active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100dvh - 40px);
+}
+@keyframes fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* スタート画面 */
+.start-box, .clear-box {
+    text-align: center;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px 28px;
+    width: 100%;
+}
+.start-icon {
+    font-size: 4.5rem;
+    margin: 0;
+    color: var(--primary);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1;
+}
+.start-title {
+    font-size: 1.7rem;
+    margin: 0.4em 0 0.2em;
+}
+.start-sub {
+    color: var(--muted);
+    margin: 0 0 1.8em;
+}
+
+/* ボタン */
+.btn {
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 14px 22px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+}
+.btn:active {
+    transform: scale(0.97);
+}
+.btn-lg {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.15rem;
+}
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(91, 108, 255, 0.35);
+}
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+.btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* 進捗 */
+.quiz-header {
+    margin-bottom: 18px;
+}
+.progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.progress-bar {
+    flex: 1;
+    height: 10px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.progress-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #7b89ff, var(--primary));
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+.progress-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+/* 問題カード（表示枠：フラット・押せない見た目） */
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+.problem-card {
+    padding: 28px 20px;
+    margin-bottom: 22px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--problem-bg);
+    border: 2px solid var(--problem-border);
+    box-shadow: inset 0 2px 6px rgba(60, 70, 110, 0.06);
+    overflow: hidden;
+}
+.problem-math {
+    font-size: 1.35rem;
+    width: 100%;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.problem-math::-webkit-scrollbar {
+    display: none;
+}
+
+/* 数式を大きく保つ（縮小させない） */
+mjx-container {
+    font-size: inherit !important;
+}
+.problem-math mjx-container[display="true"] {
+    margin: 0 !important;
+}
+
+/* 選択肢（押し込めるボタン風） */
+.choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.choices.grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.choice {
+    background: linear-gradient(180deg, var(--btn-face) 0%, #f0f2f8 100%);
+    border: 2px solid var(--btn-edge);
+    border-radius: 14px;
+    padding: 18px 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    text-align: center;
+    color: var(--text);
+    transition: transform 0.06s ease, box-shadow 0.06s ease, border-color 0.12s ease, background 0.12s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 64px;
+    line-height: 1.2;
+    box-shadow: 0 5px 0 var(--btn-edge);
+    position: relative;
+    top: 0;
+}
+.choice:hover:not(:disabled) {
+    border-color: var(--primary);
+}
+.choice:active:not(:disabled) {
+    top: 4px;
+    box-shadow: 0 1px 0 var(--btn-edge-active);
+    transform: none;
+}
+.choice.is-correct {
+    border-color: var(--correct);
+    background: var(--correct-bg);
+    box-shadow: 0 3px 0 #159652;
+    top: 2px;
+}
+.choice.is-wrong {
+    border-color: var(--wrong);
+    background: var(--wrong-bg);
+    box-shadow: 0 3px 0 #b82a48;
+    top: 2px;
+    animation: shake 0.35s ease;
+}
+.choice:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+.choice.is-correct:disabled,
+.choice.is-wrong:disabled {
+    opacity: 1;
+}
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+}
+
+/* 選択肢内の分数を大きく */
+.choice mjx-container {
+    font-size: 1.15em !important;
+}
+
+/* フィードバック */
+.feedback {
+    text-align: center;
+    font-weight: 700;
+    min-height: 1.4em;
+    margin: 16px 0 4px;
+    font-size: 1.05rem;
+}
+.feedback.correct { color: var(--correct); }
+.feedback.wrong { color: var(--wrong); }
+
+/* 解説 */
+.explanation {
+    background: #f4f6ff;
+    border: 1px solid #dfe4ff;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 4px 0 0;
+    font-size: 1.05rem;
+    text-align: center;
+    overflow-x: auto;
+}
+.is-hidden {
+    display: none;
+}
+
+.btn-next {
+    margin-top: 18px;
+}
+
+/* クリア画面 */
+.clear-face {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 0.6em;
+    letter-spacing: 0.02em;
+}
+.clear-title {
+    font-size: 1.5rem;
+    margin: 0 0 1.2em;
+}
+.clear-formula-label {
+    color: var(--muted);
+    margin: 0 0 0.4em;
+    font-size: 0.95rem;
+}
+.clear-formula {
+    font-size: 1.3rem;
+    margin-bottom: 1.8em;
+    overflow-x: auto;
+}

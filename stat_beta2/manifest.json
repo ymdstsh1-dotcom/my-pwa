@@ -1,0 +1,25 @@
+{
+  "name": "ベータ分布の積分",
+  "short_name": "β積分",
+  "description": "ベータ積分の公式 Γ(α)Γ(β)/Γ(α+β) を12問で誘導しながら学ぶ学習アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef1f8",
+  "theme_color": "#5b6cff",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -190,9 +190,14 @@ function renderQuestion() {
     hideExplanation();
     els.next.hidden = true;
 
-    // 選択肢ボタン生成（第6問のみ2×2）
+    // 選択肢レイアウト：第1〜3問は縦、第6問は2×2、第4問以降の2択は横並び
     els.choices.innerHTML = "";
-    els.choices.classList.toggle("grid-2x2", q.choices.length === 4);
+    els.choices.className = "choices";
+    if (q.choices.length === 4) {
+        els.choices.classList.add("grid-2x2");
+    } else if (q.choices.length === 2 && current >= 3) {
+        els.choices.classList.add("grid-2");
+    }
     q.choices.forEach((choiceTex, index) => {
         const btn = document.createElement("button");
         btn.type = "button";

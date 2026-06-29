@@ -201,6 +201,25 @@ mjx-container {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
+/* 第4問以降の2択：横並び（分数の左右比較向け） */
+.choices.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.choices.grid-2 .choice {
+    min-height: 80px;
+    padding: 16px 8px;
+    font-size: 1.05rem;
+}
+.choices.grid-2 .choice mjx-container {
+    font-size: clamp(0.9em, 3.2vw, 1.08em) !important;
+    max-width: 100%;
+}
+.choices.grid-2x2 .choice {
+    min-height: 72px;
+    padding: 16px 10px;
+}
 .choice {
     background: linear-gradient(180deg, var(--btn-face) 0%, #f0f2f8 100%);
     border: 2px solid var(--btn-edge);

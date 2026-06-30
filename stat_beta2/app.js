@@ -120,7 +120,6 @@ function applyQuestionColors(tex, index) {
 }
 
 let current = 0;
-let wrongOnce = false;
 let advanceTimer = null;
 
 function clearAdvanceTimer() {
@@ -175,7 +174,6 @@ function typeset(elements) {
 function renderQuestion() {
     const q = QUESTIONS[current];
     clearAdvanceTimer();
-    wrongOnce = false;
 
     // 進捗
     els.progressText.textContent = `${current + 1} / ${QUESTIONS.length}`;
@@ -217,29 +215,24 @@ function renderQuestion() {
 
 function handleChoice(index, btn) {
     const q = QUESTIONS[current];
-    if (btn.disabled && btn.classList.contains("is-wrong")) return;
+    if (btn.disabled) return;
 
     if (index === q.correct) {
         btn.classList.add("is-correct");
         Array.from(els.choices.children).forEach((c) => (c.disabled = true));
         els.feedback.textContent = "正解！";
         els.feedback.className = "feedback correct";
-
-        if (wrongOnce) {
-            // 一度誤答してから正解：解説はそのまま、下に次へボタン
-            els.next.hidden = false;
-            els.next.textContent = current === QUESTIONS.length - 1 ? "結果を見る" : "次の問題";
-        } else {
-            // 初回正解：1秒後に自動で次へ
-            advanceTimer = setTimeout(goNext, 1000);
-        }
+        advanceTimer = setTimeout(goNext, 1000);
     } else {
-        wrongOnce = true;
+        const buttons = Array.from(els.choices.children);
         btn.classList.add("is-wrong");
-        btn.disabled = true;
-        els.feedback.textContent = "もう一度！";
-        els.feedback.className = "feedback wrong";
+        buttons[q.correct].classList.add("is-correct");
+        buttons.forEach((c) => (c.disabled = true));
+        els.feedback.textContent = "解説を確認してね";
+        els.feedback.className = "feedback hint";
         showExplanation(q.explanation);
+        els.next.hidden = false;
+        els.next.textContent = current === QUESTIONS.length - 1 ? "結果を見る" : "次の問題";
     }
 }
 

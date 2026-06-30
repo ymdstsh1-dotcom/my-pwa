@@ -287,9 +287,12 @@ mjx-container {
     margin: 16px 0 4px;
     font-size: 1.05rem;
 }
+.feedback:empty {
+    min-height: 0;
+    margin: 0;
+}
 .feedback.correct { color: var(--correct); }
 .feedback.wrong { color: var(--wrong); }
-.feedback.hint { color: var(--muted); }
 
 /* 解説 */
 .explanation {

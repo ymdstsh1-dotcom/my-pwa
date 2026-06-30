@@ -228,8 +228,8 @@ function handleChoice(index, btn) {
         btn.classList.add("is-wrong");
         buttons[q.correct].classList.add("is-correct");
         buttons.forEach((c) => (c.disabled = true));
-        els.feedback.textContent = "解説を確認してね";
-        els.feedback.className = "feedback hint";
+        els.feedback.textContent = "";
+        els.feedback.className = "feedback";
         showExplanation(q.explanation);
         els.next.hidden = false;
         els.next.textContent = current === QUESTIONS.length - 1 ? "結果を見る" : "次の問題";

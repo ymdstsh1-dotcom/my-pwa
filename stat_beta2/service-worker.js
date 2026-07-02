@@ -1,4 +1,4 @@
-const CACHE_NAME = "beta-integral-quiz-v8";
+const CACHE_NAME = "beta-integral-quiz-v9";
 
 // アプリ本体（問題・正答はJSに埋め込み済みなので、これだけで完全オフライン動作）
 const ASSETS = [

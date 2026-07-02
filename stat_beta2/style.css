@@ -156,10 +156,14 @@ body {
 .quiz-body,
 .explanation,
 .clear-formula {
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
 }
-.is-rendering {
+.quiz-body.is-rendering,
+.explanation.is-rendering,
+.clear-formula.is-rendering {
     opacity: 0;
+    visibility: hidden;
+    transition: none;
 }
 
 /* 問題カード（表示枠：フラット・押せない見た目） */

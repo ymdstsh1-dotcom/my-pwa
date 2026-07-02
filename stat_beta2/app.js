@@ -129,12 +129,21 @@ function clearAdvanceTimer() {
     }
 }
 
+function beginRendering(el) {
+    el.classList.add("is-rendering");
+    void el.offsetHeight;
+}
+
+function endRendering(el) {
+    el.classList.remove("is-rendering");
+}
+
 function showExplanation(tex) {
-    els.explanationMath.innerHTML = applyQuestionColors(tex, current);
     els.explanation.classList.remove("is-hidden");
-    els.explanation.classList.add("is-rendering");
+    beginRendering(els.explanation);
+    els.explanationMath.innerHTML = applyQuestionColors(tex, current);
     return typeset([els.explanationMath]).then(() => {
-        els.explanation.classList.remove("is-rendering");
+        endRendering(els.explanation);
     });
 }
 
@@ -192,7 +201,7 @@ async function renderQuestion() {
     els.progressText.textContent = `${current + 1} / ${QUESTIONS.length}`;
     els.progressFill.style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
 
-    els.quizBody.classList.add("is-rendering");
+    beginRendering(els.quizBody);
 
     // 問題文（色付け）
     els.problem.innerHTML = applyQuestionColors(q.problem, current);
@@ -226,7 +235,7 @@ async function renderQuestion() {
     });
 
     await typeset([els.problem, els.choices]);
-    els.quizBody.classList.remove("is-rendering");
+    endRendering(els.quizBody);
 }
 
 function handleChoice(index, btn) {
@@ -264,10 +273,10 @@ function goNext() {
 
 async function showClearScreen() {
     showScreen("clear");
-    els.clearFormula.classList.add("is-rendering");
+    beginRendering(els.clearFormula);
     els.clearFormula.innerHTML = applyQuestionColors(CLEAR_FORMULA, 11);
     await typeset([els.clearFormula]);
-    els.clearFormula.classList.remove("is-rendering");
+    endRendering(els.clearFormula);
 }
 
 function start() {

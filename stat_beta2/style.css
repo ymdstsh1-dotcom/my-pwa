@@ -152,6 +152,16 @@ body {
     white-space: nowrap;
 }
 
+/* MathJax 描画完了まで非表示（TeX生文字のちらつき防止） */
+.quiz-body,
+.explanation,
+.clear-formula {
+    transition: opacity 0.15s ease;
+}
+.is-rendering {
+    opacity: 0;
+}
+
 /* 問題カード（表示枠：フラット・押せない見た目） */
 .card {
     background: var(--card);

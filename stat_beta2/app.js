@@ -132,11 +132,15 @@ function clearAdvanceTimer() {
 function showExplanation(tex) {
     els.explanationMath.innerHTML = applyQuestionColors(tex, current);
     els.explanation.classList.remove("is-hidden");
-    typeset([els.explanationMath]);
+    els.explanation.classList.add("is-rendering");
+    return typeset([els.explanationMath]).then(() => {
+        els.explanation.classList.remove("is-rendering");
+    });
 }
 
 function hideExplanation() {
     els.explanation.classList.add("is-hidden");
+    els.explanation.classList.remove("is-rendering");
     els.explanationMath.innerHTML = "";
 }
 
@@ -147,6 +151,7 @@ const screens = {
 };
 
 const els = {
+    quizBody: document.getElementById("quiz-body"),
     problem: document.getElementById("problem-math"),
     choices: document.getElementById("choices"),
     feedback: document.getElementById("feedback"),
@@ -164,20 +169,30 @@ function showScreen(name) {
 }
 
 // MathJax で要素内をレンダリング（読み込み前に呼ばれても安全に待つ）
-function typeset(elements) {
-    if (window.MathJax && window.MathJax.typesetPromise) {
-        return window.MathJax.typesetPromise(elements);
+function waitForMathJax() {
+    if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+        return window.MathJax.startup.promise;
     }
     return Promise.resolve();
 }
 
-function renderQuestion() {
+function typeset(elements) {
+    return waitForMathJax().then(() => {
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            return window.MathJax.typesetPromise(elements);
+        }
+    });
+}
+
+async function renderQuestion() {
     const q = QUESTIONS[current];
     clearAdvanceTimer();
 
     // 進捗
     els.progressText.textContent = `${current + 1} / ${QUESTIONS.length}`;
     els.progressFill.style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
+
+    els.quizBody.classList.add("is-rendering");
 
     // 問題文（色付け）
     els.problem.innerHTML = applyQuestionColors(q.problem, current);
@@ -210,7 +225,8 @@ function renderQuestion() {
         els.choices.appendChild(btn);
     });
 
-    typeset([els.problem, els.choices]);
+    await typeset([els.problem, els.choices]);
+    els.quizBody.classList.remove("is-rendering");
 }
 
 function handleChoice(index, btn) {
@@ -242,10 +258,16 @@ function goNext() {
         current += 1;
         renderQuestion();
     } else {
-        showScreen("clear");
-        els.clearFormula.innerHTML = applyQuestionColors(CLEAR_FORMULA, 11);
-        typeset([els.clearFormula]);
+        showClearScreen();
     }
+}
+
+async function showClearScreen() {
+    showScreen("clear");
+    els.clearFormula.classList.add("is-rendering");
+    els.clearFormula.innerHTML = applyQuestionColors(CLEAR_FORMULA, 11);
+    await typeset([els.clearFormula]);
+    els.clearFormula.classList.remove("is-rendering");
 }
 
 function start() {

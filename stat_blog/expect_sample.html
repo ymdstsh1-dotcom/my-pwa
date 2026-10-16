@@ -14,18 +14,18 @@
   --sub: #6a6f76;
   --line: #d9d6cf;
   --hi: #c62828;        /* 注目（赤） */
-  --hi2: #1f5fbf;       /* もう一方（青） */
+  --hi2: #2f7fe0;       /* もう一方（青） */
   --win-h: 0px;         /* 式の窓（2行）の高さ。JSが設定 */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #1b1d21; --fg: #e8e6e1; --sub: #a3a7ad; --line: #3a3d43;
-    --hi: #ff6b6b; --hi2: #6ea8ff;
+    --hi: #ff9e9e; --hi2: #9ec5ff;
   }
 }
 :root[data-theme="dark"] {
   --bg: #1b1d21; --fg: #e8e6e1; --sub: #a3a7ad; --line: #3a3d43;
-  --hi: #ff6b6b; --hi2: #6ea8ff;
+  --hi: #ff9e9e; --hi2: #9ec5ff;
 }
 
 * { box-sizing: border-box; }
@@ -123,13 +123,14 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
 
 /* ===== 図（格子点）を含むまとまり ===== */
 .group { display: grid; grid-template-columns: minmax(0, 1fr) 240px; column-gap: 28px; align-items: start; padding-bottom: 1.1em; }
-.group .fig { grid-column: 2; grid-row: 1; position: sticky; top: calc(var(--win-h) + 12px); margin: 0; }
+.group .fig { grid-column: 2; grid-row: 2; position: sticky; top: calc(var(--win-h) + 12px); margin: 0; }
 @media (min-width: 721px) { [data-mode="all"] .group { grid-template-columns: minmax(0, 1fr) 210px; } }   /* 5行固定時は読む領域が狭いので図を小さく */
-.group .group-text { grid-column: 1; grid-row: 1; }
+.group .group-head { grid-column: 1 / -1; grid-row: 1; }
+.group .group-text { grid-column: 1; grid-row: 2; }
 .group .step:last-child { padding-bottom: 0; }
 .fig-box { position: relative; }
 .fig svg { width: 100%; height: auto; display: block; }
-.fig figcaption { display: grid; font-size: 0.82rem; color: var(--sub); text-align: center; }
+.fig figcaption { display: grid; color: var(--sub); text-align: center; }
 .fig figcaption > span { grid-area: 1 / 1; opacity: 0; transition: opacity .3s; }
 [data-step="2a"] .cap-2a, [data-step="2b"] .cap-2b, [data-step="2c"] .cap-2c,
 [data-step="3"] .cap-2c, [data-step="print"] .cap-2c { opacity: 1; }
@@ -155,17 +156,15 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
 
 /* ===== スマホ幅 ===== */
 @media (max-width: 720px) {
-  body { font-size: 16px; }
-  .katex { font-size: 1em; }
   .eq-track { --numw: 1.5em; }
   .group { grid-template-columns: minmax(0, 1fr); }
   .group .fig {
-    grid-column: 1; grid-row: 1; z-index: 5;
+    grid-column: 1; grid-row: 2; z-index: 5;
     top: var(--win-h); background: var(--bg);
     border-bottom: 1px solid var(--line); padding: 4px 0;
   }
   .group .fig .fig-box { max-width: 230px; margin: 0 auto; }
-  .group .group-text { grid-row: 2; padding-top: 8px; }
+  .group .group-text { grid-row: 3; padding-top: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
@@ -174,7 +173,7 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
 /* ===== 印刷：5行 → 説明 の順に、普通の文書として ===== */
 @media print {
   html:root:not([data-theme="x"]) {
-    --bg: #fff; --fg: #000; --sub: #555; --line: #bbb; --hi: #c62828; --hi2: #1f5fbf;
+    --bg: #fff; --fg: #000; --sub: #555; --line: #bbb; --hi: #c62828; --hi2: #2f7fe0;
   }
   body { font-size: 10.5pt; line-height: 1.7; }
   .wrap { max-width: none; padding: 0; }
@@ -247,6 +246,10 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
       </div>
 
       <div class="group">
+        <div class="group-head" data-step="2a" data-show="2 3">
+          <span class="tag">② → ③</span>
+          <h2>和の順序を入れ替える（式 → 図 → 式）</h2>
+        </div>
         <figure class="fig" aria-label="格子点の図">
           <div class="fig-box" id="figBox">
             <svg viewBox="0 22 260 214" role="img">
@@ -273,8 +276,6 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
 
         <div class="group-text">
           <div class="step" data-step="2a" data-show="2 3">
-            <span class="tag">② → ③</span>
-            <h2>和の順序を入れ替える（式 → 図を経由する → 式）</h2>
             <p>この二重和がどこを足すのか図にします。<span class="m">k</span> は <span class="m">\infty</span> までとれますが、<span class="m">\ell</span> は <span class="m">1</span> から <span class="m">k</span> に制限されるので、<span class="m">45^\circ</span> 線より右下の格子点です。</p>
           </div>
           <div class="step" data-step="2b" data-show="2 3">
@@ -283,23 +284,25 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
           <div class="step" data-step="2c" data-show="2 3">
             <p>これを、まず横に足し、次に縦に足す順に入れ替えたのが③です。和の上限が <span class="m">\infty</span> になり、制限が外せました。</p>
           </div>
-          <div class="step" data-step="3" data-show="3 4">
-            <span class="tag">③ → ④</span>
-            <h2>内側の和を分布関数で書く</h2>
-            <div class="mb" data-tex-block="\begin{aligned}
-              \sum_{k=\ell}^{\infty} f(k) &= f(\ell) + f(\ell+1) + \cdots \\
-              &= P(X \ge \ell) \\
-              &= 1 - P(X \le \ell-1) \\
-              &= 1 - F(\ell-1) \;\text{です。}
-            \end{aligned}"></div>
-          </div>
         </div>
+      </div>
+
+
+      <div class="step" data-step="3" data-show="3 4">
+        <span class="tag">③ → ④</span>
+        <h2>内側の和を分布関数で書く</h2>
+        <div class="mb" data-tex-block="\begin{aligned}
+          \sum_{k=\ell}^{\infty} f(k) &= f(\ell) + f(\ell+1) + \cdots \\
+          &= P(X \ge \ell) \\
+          &= 1 - P(X \le \ell-1) \\
+          &= 1 - F(\ell-1) \;\text{です。}
+        \end{aligned}"></div>
       </div>
 
       <div class="step" data-step="4" data-show="4 5">
         <span class="tag">④ → ⑤</span>
         <h2>文字を置き換える</h2>
-        <p><span class="m">n = \ell - 1</span> とおきます。<span class="m">\ell</span> と <span class="m">n</span> の対応は次のとおりです。</p>
+        <p><span class="m">\ell - 1 = n</span> とおきます。<span class="m">\ell</span> と <span class="m">n</span> の対応は次のとおりです。</p>
         <table class="map">
           <tr><th><span class="m">\ell</span></th><td><span class="m">1</span></td><td><span class="m">2</span></td><td><span class="m">\cdots</span></td><td><span class="m">\infty</span></td></tr>
           <tr><th><span class="m">n</span></th><td><span class="m">0</span></td><td><span class="m">1</span></td><td><span class="m">\cdots</span></td><td><span class="m">\infty</span></td></tr>
@@ -415,6 +418,16 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
     });
   }
 
+  // PC：② → ③ の最後の段落を読む間は図が全部見えているよう、図の横の余白を確保する
+  function keepFigure() {
+    const gt = document.querySelector(".group-text");
+    gt.style.paddingBottom = "";
+    if (narrow.matches) return;                     // スマホは図が本文の上にあるので不要
+    const last = gt.lastElementChild;
+    const rest = gt.getBoundingClientRect().bottom - last.getBoundingClientRect().top;
+    gt.style.paddingBottom = Math.max(0, fig.offsetHeight + 12 - rest) + "px";
+  }
+
   function measure() {
     chooseLhs();
     fullH = track.offsetHeight;
@@ -424,6 +437,7 @@ table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; tex
     root.dataset.mode = mode;
     winH = mode === "all" ? fullH : pairMaxH;
     root.style.setProperty("--win-h", winH + "px");
+    keepFigure();
     const s = current; current = null; applyStep(s || "0"); update();
   }
 

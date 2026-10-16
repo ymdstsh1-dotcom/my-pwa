@@ -1,1 +1,484 @@
-tmp
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>白本 2-6 サンプル</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.js"></script>
+<style>
+/* ===== 色（ライト／ダーク） ===== */
+:root {
+  --bg: #fbfaf7;
+  --fg: #1f2328;
+  --sub: #6a6f76;
+  --line: #d9d6cf;
+  --hi: #c62828;        /* 注目（赤） */
+  --hi2: #1f5fbf;       /* もう一方（青） */
+  --win-h: 0px;         /* 式の窓（2行）の高さ。JSが設定 */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1d21; --fg: #e8e6e1; --sub: #a3a7ad; --line: #3a3d43;
+    --hi: #ff6b6b; --hi2: #6ea8ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1d21; --fg: #e8e6e1; --sub: #a3a7ad; --line: #3a3d43;
+  --hi: #ff6b6b; --hi2: #6ea8ff;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+  line-height: 1.8; font-size: 17px;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 16px 0; }
+header { padding: 28px 0 8px; }
+.kicker { color: var(--sub); font-size: 0.85rem; letter-spacing: 0.05em; margin: 0; }
+h1 { font-size: 1.45rem; line-height: 1.4; margin: 4px 0 8px; }
+.lead { margin: 0; }
+h2 { font-size: 1.02rem; margin: 0 0 2px; }
+.katex { font-size: 1.08em; }
+.m { white-space: nowrap; }
+
+/* ===== 式の窓（上端に残る部分） ===== */
+.eq-sticky {
+  position: sticky; top: 0; z-index: 10;
+  pointer-events: none;          /* 窓の下の透明部分は本文を邪魔しない */
+}
+.eq-window {
+  overflow: hidden; background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: height .45s ease, border-color .3s;
+  pointer-events: auto;
+}
+.is-stuck .eq-window { border-bottom-color: var(--line); box-shadow: 0 6px 12px -10px rgba(0,0,0,.35); }
+.eq-track {
+  --numw: 1.8em;
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--numw) max-content max-content;   /* 左辺を右辺と同じ行に置く（既定） */
+  column-gap: 0.25em;
+  transition: transform .45s ease;
+}
+/* 左辺が横に入りきらないとき：左辺を番号なしの単独行にし、右辺は左端からそろえる */
+[data-lhs="own"] .eq-track { grid-template-columns: var(--numw) minmax(0, 1fr); }
+.eq-row.lhs-row { display: none; }
+[data-lhs="own"] .eq-row.lhs-row { display: grid; }
+[data-lhs="own"] .eq-row:not(.lhs-row) .lhs { display: none; }
+[data-lhs="own"] .lhs { text-align: left; }
+.eq-row {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: subgrid;
+  align-items: baseline; padding: 5px 0;
+}
+.num { color: var(--sub); font-size: 0.95rem; text-align: center; }
+.lhs { text-align: right; }
+/* 右辺は分割点（.seg の境目）でだけ折り返す。続きの行は少し字下げ */
+.rhs { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; padding-left: 1.5em; }
+.rhs > .seg:first-child { margin-left: -1.5em; }
+.measuring .rhs { flex-wrap: nowrap; }
+.rhs.scrollx { overflow-x: auto; overflow-y: hidden; }   /* 断片1つでも入らない行だけ横スクロール */
+
+/* ===== 式の部分ごとの変化（\htmlClass で付けた名札） ===== */
+.katex .enclosing { transition: color .3s; }
+/* 最初から置いてあり、普段は透明な記号（③の下括弧。\smash[b] で行の高さに影響させない） */
+.ub3 svg { opacity: 0; transition: opacity .3s; }
+
+/* 1a: 和の始まり */
+[data-step="1a"] .x-k1 { color: var(--hi); }
+/* 1b: k を和に */
+[data-step="1b"] .x-kco,
+[data-step="1b"] .x-in2 { color: var(--hi); }
+/* 2a: 足す範囲 */
+[data-step="2a"] .x-out2,
+[data-step="2a"] .x-in2 { color: var(--hi); }
+/* 2b: 元の足し方（縦→横） */
+[data-step="2b"] .x-in2 { color: var(--hi2); }
+/* 2c: 入れ替えた足し方（横→縦） */
+[data-step="2c"] .x-in2 { color: var(--hi2); }
+[data-step="2c"] .x-in3 { color: var(--hi); }
+/* 3: 内側の和 → 分布関数 */
+[data-step="3"] .ub3 { color: var(--hi); }
+[data-step="3"] .ub3 svg { opacity: 1; }
+[data-step="3"] .x-tail4 { color: var(--hi); }
+/* 4: 文字の置き換え */
+[data-step="4"] .x-lm4,
+[data-step="4"] .x-l4,
+[data-step="4"] .x-n5,
+[data-step="4"] .x-nn5 { color: var(--hi); }
+
+/* ===== 説明文 ===== */
+.steps { position: relative; z-index: 1; padding: 14px 0 max(40vh, calc(100vh - 400px)); }
+.step { padding: 0 0 1.1em; }
+.step p { margin: 0 0 0.4em; }
+.tag { display: inline-block; font-size: 0.8rem; line-height: 1.6; color: var(--sub); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; margin: 0 0 2px; }
+.mb { margin: 0.2em 0 0.4em 1em; }
+.mb .katex-display { margin: 0; }
+table.map { border-collapse: collapse; margin: 4px 0 8px; }
+table.map td, table.map th { border: 1px solid var(--line); padding: 0 12px; text-align: center; font-weight: normal; }
+
+/* ===== 図（格子点）を含むまとまり ===== */
+.group { display: grid; grid-template-columns: minmax(0, 1fr) 240px; column-gap: 28px; align-items: start; padding-bottom: 1.1em; }
+.group .fig { grid-column: 2; grid-row: 1; position: sticky; top: calc(var(--win-h) + 12px); margin: 0; }
+@media (min-width: 721px) { [data-mode="all"] .group { grid-template-columns: minmax(0, 1fr) 210px; } }   /* 5行固定時は読む領域が狭いので図を小さく */
+.group .group-text { grid-column: 1; grid-row: 1; }
+.group .step:last-child { padding-bottom: 0; }
+.fig-box { position: relative; }
+.fig svg { width: 100%; height: auto; display: block; }
+.fig figcaption { display: grid; font-size: 0.82rem; color: var(--sub); text-align: center; }
+.fig figcaption > span { grid-area: 1 / 1; opacity: 0; transition: opacity .3s; }
+[data-step="2a"] .cap-2a, [data-step="2b"] .cap-2b, [data-step="2c"] .cap-2c,
+[data-step="3"] .cap-2c, [data-step="print"] .cap-2c { opacity: 1; }
+
+/* 図の文字（TeX）：SVG の座標に合わせて重ねる */
+.lab { position: absolute; transform: translate(-50%, -50%); font-size: 0.8rem; line-height: 1; white-space: nowrap; color: var(--sub); transition: opacity .3s; }
+.lab.var { color: var(--fg); font-size: 0.95rem; }
+/* 一般の番号：縦に足す段階は k、横に足す段階（③）からは ℓ */
+.lab-l { opacity: 0; }
+[data-step="2c"] .lab-k, [data-step="3"] .lab-k, [data-step="4"] .lab-k, [data-step="print"] .lab-k { opacity: 0; }
+[data-step="2c"] .lab-l, [data-step="3"] .lab-l, [data-step="4"] .lab-l, [data-step="print"] .lab-l { opacity: 1; }
+
+.lat-axis { stroke: var(--sub); stroke-width: 1.2; fill: none; }
+.lat-diag { stroke: var(--sub); stroke-width: 1.2; stroke-dasharray: 4 4; }
+.lat-pt { fill: var(--bg); stroke: var(--fg); stroke-width: 1.6; }
+.v-line, .h-line { stroke-width: 9; stroke-linecap: round; opacity: 0; transition: opacity .35s; }
+.v-line { stroke: var(--hi2); }
+.h-line { stroke: var(--hi); }
+.h-arrow { fill: var(--hi); opacity: 0; transition: opacity .35s; }
+[data-step="2b"] .v-line { opacity: .35; }
+[data-step="2c"] .h-line, [data-step="3"] .h-line, [data-step="print"] .h-line { opacity: .35; }
+[data-step="2c"] .h-arrow, [data-step="3"] .h-arrow, [data-step="print"] .h-arrow { opacity: .8; }
+
+/* ===== スマホ幅 ===== */
+@media (max-width: 720px) {
+  body { font-size: 16px; }
+  .katex { font-size: 1em; }
+  .eq-track { --numw: 1.5em; }
+  .group { grid-template-columns: minmax(0, 1fr); }
+  .group .fig {
+    grid-column: 1; grid-row: 1; z-index: 5;
+    top: var(--win-h); background: var(--bg);
+    border-bottom: 1px solid var(--line); padding: 4px 0;
+  }
+  .group .fig .fig-box { max-width: 230px; margin: 0 auto; }
+  .group .group-text { grid-row: 2; padding-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* ===== 印刷：5行 → 説明 の順に、普通の文書として ===== */
+@media print {
+  html:root:not([data-theme="x"]) {
+    --bg: #fff; --fg: #000; --sub: #555; --line: #bbb; --hi: #c62828; --hi2: #1f5fbf;
+  }
+  body { font-size: 10.5pt; line-height: 1.7; }
+  .wrap { max-width: none; padding: 0; }
+  .eq-sticky { position: static; height: auto !important; }
+  .eq-window { height: auto !important; overflow: visible; box-shadow: none !important; border: 0 !important; }
+  .eq-track { transform: none !important; }
+  .steps { padding-bottom: 0; }
+  .group .fig { position: static; border: 0; }
+  .step, .fig { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">白本 演習 2-6（サンプル）</p>
+    <h1>期待値を分布関数の和で書き直す</h1>
+    <p class="lead">非負の整数値をとる確率変数 <span class="m">X</span> について、<span class="m">E[X]</span> を分布関数 <span class="m">F</span> の和で表します。</p>
+  </header>
+
+  <section class="scrolly" id="scrolly">
+    <div class="eq-sticky" id="eqSticky">
+      <div class="eq-window" id="eqWindow">
+        <div class="eq-track" id="eqTrack">
+          <div class="eq-row lhs-row" data-name="lhs">
+            <span class="num"></span>
+            <span class="lhs" data-tex="E[X]"></span>
+          </div>
+          <div class="eq-row" data-name="1">
+            <span class="num">①</span>
+            <span class="lhs" data-tex="E[X]"></span>
+            <span class="rhs"><span class="seg" data-tex="= \sum_{\htmlClass{x-k1}{k=1}}^{\infty} \htmlClass{x-kco}{k}\, f(k)"></span></span>
+          </div>
+          <div class="eq-row" data-name="2">
+            <span class="num">②</span>
+            <span class="lhs"></span>
+            <span class="rhs"><span class="seg" data-tex="= \htmlClass{x-out2}{\sum_{k=1}^{\infty}} \htmlClass{x-in2}{\sum_{\ell=1}^{k}} f(k)"></span></span>
+          </div>
+          <div class="eq-row" data-name="3">
+            <span class="num">③</span>
+            <span class="lhs"></span>
+            <span class="rhs"><span class="seg" data-tex="= \sum_{\ell=1}^{\infty} \htmlClass{ub3}{\smash[b]{\underbrace{\htmlClass{x-in3}{\sum_{k=\ell}^{\infty}} f(k)}}}"></span></span>
+          </div>
+          <div class="eq-row" data-name="4">
+            <span class="num">④</span>
+            <span class="lhs"></span>
+            <span class="rhs"><span class="seg" data-tex="= \sum_{\htmlClass{x-l4}{\ell=1}}^{\infty} \htmlClass{x-tail4}{\bigl\{ 1 - F(\htmlClass{x-lm4}{\ell-1}) \bigr\}}"></span></span>
+          </div>
+          <div class="eq-row" data-name="5">
+            <span class="num">⑤</span>
+            <span class="lhs"></span>
+            <span class="rhs"><span class="seg" data-tex="= \sum_{\htmlClass{x-n5}{n=0}}^{\infty} \bigl\{ 1 - F(\htmlClass{x-nn5}{n}) \bigr\}"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step" data-step="1a" data-show="lhs 1">
+        <span class="tag">①</span>
+        <h2>和は <span class="m">k=1</span> から</h2>
+        <p><span class="m">k=0</span> は <span class="m">0</span> なので含める必要はなく、簡略にしておきます。<span class="m">f(k)</span> は <span class="m">P(X=k)</span> と書いても同じです。</p>
+      </div>
+
+      <div class="step" data-step="1b" data-show="1 2">
+        <span class="tag">① → ②</span>
+        <h2><span class="m">k</span> を、あえて <span class="m">\Sigma</span> で書く</h2>
+        <p>「<span class="m">f(k)</span> の <span class="m">k</span> 倍」を、「<span class="m">f(k)</span> を <span class="m">k</span> 回足す」という形に、認識しなおします。ここだけ覚えておきましょう。</p>
+      </div>
+
+      <div class="group">
+        <figure class="fig" aria-label="格子点の図">
+          <div class="fig-box" id="figBox">
+            <svg viewBox="0 22 260 214" role="img">
+              <!-- 軸 -->
+              <line class="lat-axis" x1="24" y1="210" x2="248" y2="210"/>
+              <path class="lat-axis" d="M243 206 L249 210 L243 214"/>
+              <line class="lat-axis" x1="30" y1="216" x2="30" y2="30"/>
+              <path class="lat-axis" d="M26 35 L30 29 L34 35"/>
+              <!-- 45°線 -->
+              <line class="lat-diag" x1="30" y1="210" x2="206" y2="34"/>
+              <!-- 縦の線（②の足し方）・横の線（③の足し方）・格子点：JSで生成 -->
+              <g id="latV"></g>
+              <g id="latH"></g>
+              <g id="latPts"></g>
+            </svg>
+            <!-- 図の文字（TeX）：JSで生成 -->
+          </div>
+          <figcaption>
+            <span class="cap-2a">足しているのは <span class="m">45^\circ</span> 線より右下の格子点</span>
+            <span class="cap-2b">② 縦に足してから横に足す</span>
+            <span class="cap-2c">③ 横に足してから縦に足す</span>
+          </figcaption>
+        </figure>
+
+        <div class="group-text">
+          <div class="step" data-step="2a" data-show="2 3">
+            <span class="tag">② → ③</span>
+            <h2>和の順序を入れ替える（式 → 図を経由する → 式）</h2>
+            <p>この二重和がどこを足すのか図にします。<span class="m">k</span> は <span class="m">\infty</span> までとれますが、<span class="m">\ell</span> は <span class="m">1</span> から <span class="m">k</span> に制限されるので、<span class="m">45^\circ</span> 線より右下の格子点です。</p>
+          </div>
+          <div class="step" data-step="2b" data-show="2 3">
+            <p>②は、まず縦に足し、次に横に足しています。上限と下限がともに制限されています。</p>
+          </div>
+          <div class="step" data-step="2c" data-show="2 3">
+            <p>これを、まず横に足し、次に縦に足す順に入れ替えたのが③です。和の上限が <span class="m">\infty</span> になり、制限が外せました。</p>
+          </div>
+          <div class="step" data-step="3" data-show="3 4">
+            <span class="tag">③ → ④</span>
+            <h2>内側の和を分布関数で書く</h2>
+            <div class="mb" data-tex-block="\begin{aligned}
+              \sum_{k=\ell}^{\infty} f(k) &= f(\ell) + f(\ell+1) + \cdots \\
+              &= P(X \ge \ell) \\
+              &= 1 - P(X \le \ell-1) \\
+              &= 1 - F(\ell-1) \;\text{です。}
+            \end{aligned}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-step="4" data-show="4 5">
+        <span class="tag">④ → ⑤</span>
+        <h2>文字を置き換える</h2>
+        <p><span class="m">n = \ell - 1</span> とおきます。<span class="m">\ell</span> と <span class="m">n</span> の対応は次のとおりです。</p>
+        <table class="map">
+          <tr><th><span class="m">\ell</span></th><td><span class="m">1</span></td><td><span class="m">2</span></td><td><span class="m">\cdots</span></td><td><span class="m">\infty</span></td></tr>
+          <tr><th><span class="m">n</span></th><td><span class="m">0</span></td><td><span class="m">1</span></td><td><span class="m">\cdots</span></td><td><span class="m">\infty</span></td></tr>
+        </table>
+        <p>文字は <span class="m">n</span> でも <span class="m">k</span> でもかまいません。</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const KOPTS = {
+    throwOnError: false,
+    strict: "ignore",
+    trust: (ctx) => ctx.command === "\\htmlClass",   // \htmlClass だけを許可
+  };
+
+  /* ---- 1. 格子点の図を生成（紙のメモに合わせ、番号は 1, 2, 一般の番号 のみ） ---- */
+  function buildLattice() {
+    const NS = "http://www.w3.org/2000/svg";
+    const X = (k) => 30 + 36 * k, Y = (l) => 210 - 36 * l;
+    const IDX = [1, 2, 4];                 // 4 の位置が一般の番号（k または ℓ）
+    const mk = (tag, attrs, parent) => {
+      const e = document.createElementNS(NS, tag);
+      for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+      parent.appendChild(e); return e;
+    };
+    const pts = document.getElementById("latPts");
+    const gv = document.getElementById("latV");
+    const gh = document.getElementById("latH");
+    for (const k of IDX) {
+      mk("line", { class: "v-line", x1: X(k), y1: Y(1) + 7, x2: X(k), y2: Y(k) - 7 }, gv);
+      for (const l of IDX) if (l <= k) mk("circle", { class: "lat-pt", cx: X(k), cy: Y(l), r: 5 }, pts);
+    }
+    for (const l of IDX) {
+      mk("line", { class: "h-line", x1: X(l) - 7, y1: Y(l), x2: 236, y2: Y(l) }, gh);
+      mk("path", { class: "h-arrow", d: `M236 ${Y(l) - 6} L247 ${Y(l)} L236 ${Y(l) + 6} Z` }, gh);
+    }
+
+    // 文字（TeX）を SVG の座標 (x, y) に重ねる
+    const box = document.getElementById("figBox");
+    const lab = (tex, x, y, cls = "") => {
+      const s = document.createElement("span");
+      s.className = "lab " + cls;
+      s.style.left = (x / 260 * 100) + "%";          // viewBox: 0 22 260 214
+      s.style.top = ((y - 22) / 214 * 100) + "%";
+      s.dataset.tex = tex;
+      box.appendChild(s);
+    };
+    lab("k", 258, 210, "var");
+    lab("\\ell", 44, 31, "var");
+    lab("0", 19, 222);
+    lab("\\ell = k", 228, 46);
+    for (const i of [1, 2]) { lab(String(i), X(i), 224); lab(String(i), 17, Y(i)); }
+    lab("k", X(4), 224, "lab-k"); lab("k", 17, Y(4), "lab-k");
+    lab("\\ell", X(4), 224, "lab-l"); lab("\\ell", 17, Y(4), "lab-l");
+  }
+
+  /* ---- 2. 数式を描画（説明文中の式も \displaystyle で上下に添字） ---- */
+  function renderMath() {
+    document.querySelectorAll("[data-tex]").forEach((el) => {
+      const tex = el.dataset.tex;
+      if (tex) katex.render("\\displaystyle " + tex, el, KOPTS);
+    });
+    document.querySelectorAll("[data-tex-block]").forEach((el) => {
+      katex.render(el.dataset.texBlock, el, { ...KOPTS, displayMode: true, fleqn: true });
+    });
+    document.querySelectorAll(".m").forEach((el) => {
+      katex.render("\\displaystyle " + el.textContent, el, KOPTS);
+    });
+  }
+
+  /* ---- 3. 式の窓：ステップに応じて「見せる2行」を切り替える ---- */
+  const sticky = document.getElementById("eqSticky");
+  const win = document.getElementById("eqWindow");
+  const track = document.getElementById("eqTrack");
+  const rows = [...track.querySelectorAll(".eq-row")];
+  const rowByName = Object.fromEntries(rows.map((r) => [r.dataset.name, r]));
+  const steps = [...document.querySelectorAll(".steps [data-step]")];
+  const showOf = Object.fromEntries(steps.map((el) => [el.dataset.step, el.dataset.show.split(" ")]));
+  const fig = document.querySelector(".fig");
+  const narrow = window.matchMedia("(max-width: 720px)");
+  let fullH = 0, pairMaxH = 0, winH = 0, mode = "all", current = null;
+  // mode: "all" = 全行を固定したまま（PC） / "pair" = 2行ずつ（スマホ、または式全体が画面の高さの半分を超えるとき）
+
+  // 名前（"lhs", "1"〜"5"）→ いま表示されている行。左辺が右辺と同じ行なら ① の行
+  const rowOf = (name) => (name === "lhs" && root.dataset.lhs !== "own") ? rowByName["1"] : rowByName[name];
+  const visibleRows = () => rows.filter((r) => r.offsetParent !== null);
+
+  // 指定した式を含む範囲（1行にしかならないときは次の行まで）
+  const span = (names) => {
+    const vis = visibleRows();
+    const rs = [...new Set(names.map(rowOf))];
+    if (rs.length === 1) rs.push(vis[Math.min(vis.indexOf(rs[0]) + 1, vis.length - 1)]);
+    const top = Math.min(...rs.map((r) => r.offsetTop));
+    const bottom = Math.max(...rs.map((r) => r.offsetTop + r.offsetHeight));
+    return { top, height: bottom - top };
+  };
+
+  // 左辺の置き方：右辺と同じ行で横に入りきるか実測
+  function chooseLhs() {
+    root.dataset.lhs = "inline";
+    track.classList.add("measuring");
+    const need = track.scrollWidth;
+    track.classList.remove("measuring");
+    if (need > win.clientWidth + 1) root.dataset.lhs = "own";
+    // 分割点で折り返しても入らない行だけ横スクロール
+    track.querySelectorAll(".rhs").forEach((r) => {
+      r.classList.remove("scrollx");
+      if (r.scrollWidth > r.clientWidth + 1) r.classList.add("scrollx");
+    });
+  }
+
+  function measure() {
+    chooseLhs();
+    fullH = track.offsetHeight;
+    pairMaxH = Math.max(...Object.values(showOf).map((names) => span(names).height));
+    sticky.style.height = fullH + "px";            // 窓が縮んでも下の本文が動かないように
+    mode = !narrow.matches && fullH <= window.innerHeight * 0.5 ? "all" : "pair";   // スマホ幅、または式が画面の半分を超えるときは2行ずつ
+    root.dataset.mode = mode;
+    winH = mode === "all" ? fullH : pairMaxH;
+    root.style.setProperty("--win-h", winH + "px");
+    const s = current; current = null; applyStep(s || "0"); update();
+  }
+
+  function applyStep(s) {
+    if (s === current) return;
+    current = s;
+    root.dataset.step = s;
+    let top = 0, height = fullH;                   // "0"（最初）と印刷時は全行
+    if (mode === "pair" && showOf[s]) ({ top, height } = span(showOf[s]));
+    win.style.height = height + "px";
+    track.style.transform = `translateY(${-top}px)`;
+  }
+
+  /* ---- 4. いまどのステップか ----
+     ・5行が画面上端に届くまでは「0」（5行表示）
+     ・届いたら最初の説明へ
+     ・以降は、説明の先頭が窓（スマホでは図も）のすぐ下まで来たら、その説明へ
+     ・ページ末尾まで来たら最後の説明 */
+  function update() {
+    const stuck = sticky.getBoundingClientRect().top <= 0.5;
+    sticky.classList.toggle("is-stuck", stuck);
+    let s = "0";
+    if (stuck) {
+      if (steps[0].getBoundingClientRect().top <= fullH + 40) s = steps[0].dataset.step;
+      let base = winH;
+      if (narrow.matches) {
+        const fr = fig.getBoundingClientRect();
+        if (fr.top <= winH + 1 && fr.bottom > base) base = fr.bottom;
+      }
+      const line = base + 40;
+      for (const el of steps.slice(1)) {
+        if (el.getBoundingClientRect().top <= line) s = el.dataset.step;
+        else break;
+      }
+      const atEnd = window.innerHeight + window.scrollY >= root.scrollHeight - 2;
+      if (atEnd) s = steps[steps.length - 1].dataset.step;
+    }
+    applyStep(s);
+  }
+
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; update(); }); }
+  }, { passive: true });
+  window.addEventListener("resize", measure);
+  window.addEventListener("beforeprint", () => applyStep("print"));
+  window.addEventListener("afterprint", () => { current = null; update(); });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    buildLattice();
+    renderMath();
+    measure();
+    document.fonts && document.fonts.ready.then(measure);
+  });
+})();
+</script>
+</body>
+</html>
